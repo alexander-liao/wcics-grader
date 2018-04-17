@@ -1,0 +1,1 @@
+There are no tricks here, simply print "Hello, World!" exactly and enjoy your free 10 marks!
