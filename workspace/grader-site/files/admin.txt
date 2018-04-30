@@ -1,7 +1,0 @@
-hyper-neutrino
-<<<<<<< HEAD
-Riolku
-tmanti
-=======
-Riolku
->>>>>>> 263fea749b7fd17a63b35fe69d196bd14864205d

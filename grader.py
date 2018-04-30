@@ -19,45 +19,57 @@ debug = "--debug" in sys.argv
 
 if not debug: logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-users = json.loads(open("/home/cabox/workspace/contest-grader/files/users.json").read())
-
+users = json.loads(open("/home/cabox/workspace/wcics-grader/files/users.json").read())
 
 def update_probs():
-  return {p:json.loads(open("/home/cabox/workspace/contest-grader/files/problems/%s/problem.json"%p).read()) for p in open("/home/cabox/workspace/contest-grader/files/contest.txt").read().splitlines()}
+  return {p: json.loads(open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json"%p).read()) for p in open("/home/cabox/workspace/wcics-grader/files/contest.txt").read().splitlines()}
 
 problem_map = update_probs()
 
 pages = math.ceil(len(problem_map)/10)
 
-running = eval(open("/home/cabox/workspace/contest-grader/files/running.txt", "r").read().strip())
+running = eval(open("/home/cabox/workspace/wcics-grader/files/running.txt", "r").read().strip())
 
-sudoers = open("/home/cabox/workspace/contest-grader/files/admin.txt").read().splitlines()
+sudoers = open("/home/cabox/workspace/wcics-grader/files/admin.txt").read().splitlines()
 
-def grade(command, tests, cwd):
+extraTLS = {
+  "Python 3.6.4": 4,
+  "Python 2.7.6": 4,
+  "Java 9.0.4": 2,
+  "C++ (g++) 4.8.4": 1,
+  "C (gcc) 4.8.4": 1,
+  "Ruby 2.5.0": 4,
+  "Ruby 1.9.3p484": 4,
+  "Haskell (GHC 7.6.3)": 4,
+  "COBOL (OpenCOBOL 1.1.0)": 4,
+  "Kotlin 1.2.30 (SUPER SLOW)": 5
+}
+
+def grade(command, tests, cwd, language):
   for suite_num, subtask in enumerate(tests):
     points = subtask["points"]
     tasks = subtask["tests"]
-    timelimit = subtask["timelimit"]
-    yield (0, suite_num, points)
+    timelimit = subtask["timelimit"] * extraTLS[language]
+    yield (0, points)
     skip = False
     for test_num, (i, o, key) in enumerate(tasks):
       i = decompress(i,key)
       if skip:
-        yield (5, test_num)
+        yield (5,)
       else:
         start = time()
         try:
           expected = o.strip()
-          actual = hashlib.sha384(bytes("".join(map(chr, check_output(command, cwd = cwd, input = bytes(i, "utf8"), stderr = sys.stdout, timeout = timelimit))).strip(), "utf8")).hexdigest()
+          actual = hashlib.sha384(check_output(command, cwd = cwd, input = bytes(i, "utf8"), stderr = sys.stdout, timeout = timelimit).strip()).hexdigest()
           if expected == actual:
-            yield (1, test_num, time() - start)
+            yield (1, time() - start)
           else:
-            yield (2, test_num, time() - start, expected, actual); skip = True
+            yield (2, time() - start, expected, actual); skip = True
         except subprocess.TimeoutExpired:
-          yield (3, test_num, time() - start); skip = True
+          yield (3, time() - start); skip = True
         except:
           traceback.print_exc()
-          yield (4, test_num, time() - start); skip = True
+          yield (4, time() - start); skip = True
     yield (6, (1 - skip) * points)
   yield (7,)
 
@@ -65,23 +77,23 @@ def flatten(gen):
   while True:
     yield from next(gen)
 
-def test(command, tests, cwd, output = print, user = None, problem = ""):
+def test(command, tests, cwd, output = print, user = None, problem = "", language = ""):
   debug = "--debug" in sys.argv
-  grader = flatten(grade(command, tests, cwd))
+  grader = flatten(grade(command, tests, cwd, language))
   total = 0
   while True:
     num = next(grader)
     if num == 0:
-      suite = next(grader) + 1
       points = next(grader)
-      output("Test Suite %d [%d point%s]" % (suite, points, "s" * (points != 1)))
+      output(0)
+      output(points)
       while True:
         id = next(grader)
-        if id == 1: output("Test %d passed: %s seconds" % (next(grader) + 1, round(next(grader), 2)))
-        if id == 2: output("Test %d failed: Wrong Answer: %s seconds%s" % (next(grader) + 1, round(next(grader), 2), ["", ": expected %r, got %r" % (next(grader), next(grader))][debug]))
-        if id == 3: output("Test %d failed: Time Limit Exceeded: %s seconds" % (next(grader) + 1, round(next(grader), 2)))
-        if id == 4: output("Test %d failed: Runtime Error: %s seconds" % (next(grader) + 1, round(next(grader), 2)))
-        if id == 5: output("Test %d skipped" % (next(grader) + 1))
+        if id == 1: output(1); output(round(next(grader), 2))
+        if id == 2: output(2); output(round(next(grader), 2))
+        if id == 3: output(3); output(round(next(grader), 2))
+        if id == 4: output(4); output(round(next(grader), 2))
+        if id == 5: output(5)
         if id == 6: total += next(grader); break
     if num == 7:
       break
@@ -92,7 +104,9 @@ def test(command, tests, cwd, output = print, user = None, problem = ""):
       users[user]["scores"][problem] = total
       users[user]["recency"] = time()
     update_users()
-  output("Total Points: %d / %d" % (total, sum(subtask["points"] for subtask in tests)))
+  output(6)
+  output(total)
+  output(sum(subtask["points"] for subtask in tests))
 
 def do_tests(array, command, tests):
   def function():
@@ -110,11 +124,11 @@ name_to_command = {
   "Java 9.0.4": ["javac Main.java", "java Main"],
   "C++ (g++) 4.8.4": ["g++ -std=c++11 Main.cpp -o a.out", "./a.out"],
   "C (gcc) 4.8.4": ["gcc Main.c -o a.out","./a.out"],
-  "Ruby 2.5.0": ["bash /home/cabox/workspace/contest-grader/ruby.sh"],
+  "Ruby 2.5.0": ["bash /home/cabox/workspace/wcics-grader/ruby.sh"],
   "Ruby 1.9.3p484": ["ruby Main.rb"],
   "Haskell (GHC 7.6.3)": ["ghc -o Main Main.hs", "./Main"],
   "COBOL (OpenCOBOL 1.1.0)": ["cobc -free -x -o Main Main.cbl", "./Main"],
-  "Kotlin 1.2.30 (SUPER SLOW)": ["/home/cabox/workspace/contest-grader/kotlinc/bin/kotlinc Main.kt -include-runtime -d Main.jar", "java -jar Main.jar"]
+  "Kotlin 1.2.30 (SUPER SLOW)": ["/home/cabox/workspace/wcics-grader/kotlinc/bin/kotlinc Main.kt -include-runtime -d Main.jar", "java -jar Main.jar"]
 }
 
 file_exts = {
@@ -131,17 +145,21 @@ file_exts = {
 }
 
 def compress(string,key):
+  return string
   if not string:
     return string
   key += chr(0x110000-1)
   chunk = f(len(key))[0]-1
   return "".join(c(string[a:a+chunk]+chr(0x110000-1),key) for a in range(0,len(string),chunk))
+
 def decompress(string,key):
+  return string
   if not string:
     return string 
   key += chr(0x110000-1)
   chunk = f(len(key))[1]
   return "".join(d(string[a:a+chunk],key) for a in range(0,len(string),chunk))
+
 def c(string,key):
   try:
     indexes = {key[a]:a for a in range(len(key))}
@@ -167,26 +185,26 @@ def d(string,key):
 def f(n):return min(((ceil(log(256)/log(n)*a),a) for a in range(1,256)),key=lambda a:(ceil(log(256)/log(n)*a[1]) - log(256)/log(n) * a[1],a[1]))
 
 def get_data(name):
-  with open("/home/cabox/workspace/contest-grader/files/problems/%s/tests.json" % name, "r", encoding = "utf-8") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/problems/%s/tests.json" % name, "r", encoding = "utf-8") as f:
     return json.load(f)
 
 def update_users():
-  with open("/home/cabox/workspace/contest-grader/files/users.json", "w") as f:
-    f.write(json.dumps(users, indent = 4))
+  with open("/home/cabox/workspace/wcics-grader/files/users.json", "w") as f:
+    f.write(json.dumps(users))
 
-submissions = json.load(open("/home/cabox/workspace/contest-grader/files/submissions.json"))
+submissions = json.load(open("/home/cabox/workspace/wcics-grader/files/submissions.json"))
 
 def process_submission(username, code, language, problem):
   username = username.strip()
   if len(username) > 24 or len(username) == 0:
     return "/urbad"
   submission = (username, language, problem, [])
-  id = int(time() * 1000)
+  id = str(int(time() * 1000))
   submissions[id] = submission
   problems = getProblems()
   def proc():
     commands = name_to_command[language]
-    foldername = "Submission%d" % id
+    foldername = "Submission%s" % id
     try:
       shutil.rmtree(foldername)
     except:
@@ -198,30 +216,38 @@ def process_submission(username, code, language, problem):
       f.write(code)
     for command in commands[:-1]:
       call(shlex.split(command), cwd = foldername)
-    test(shlex.split(commands[-1]), get_data(problem), foldername, submission[3].append, username, problem)
+    def recv(num):
+      if num == 5:
+        if submission[3][-2] == 5:
+          submission[3][-1] += 1
+        else:
+          submission[3].extend([5, 1])
+      else:
+        submission[3].append(num)
+    test(shlex.split(commands[-1]), get_data(problem), foldername, recv, username, problem, language)
     shutil.rmtree(foldername)
-    with open("/home/cabox/workspace/contest-grader/files/submissions.json", "w") as f:
+    with open("/home/cabox/workspace/wcics-grader/files/submissions.json", "w") as f:
       f.write(json.dumps(submissions))
   threading.Thread(target = proc).start()
   print("{username} created a submission in {language} for {problem} with id {id}".format(username = username, language = language, problem = problem, id = id))
   print("=" * 50)
   print(code)
   print("=" * 50)
-  return "/submission/%d" % id
+  return "/submission/%s" % id
 
 def get_sorted_users():
   return sorted(list(users), key = lambda u: (sum(users[u]["scores"][p] for p in users[u]["scores"] if p in getProblems()), -users[u]["recency"]), reverse = True)
 
 def getProblems():
-  with open("/home/cabox/workspace/contest-grader/files/contest.txt", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "r") as f:
     return f.read().splitlines()
 
 def getFeaturedProblems():
-  with open("/home/cabox/workspace/contest-grader/files/featured.txt") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/featured.txt") as f:
     return f.read().splitlines()
 
 def fullname(name):
-  with open("/home/cabox/workspace/contest-grader/files/problems/%s/problem.json" % name, "r", encoding = "utf8") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % name, "r", encoding = "utf8") as f:
     return json.loads(f.read())["title"]
 
 def getFullNames():
@@ -242,27 +268,27 @@ def servePage(page):
   global pages
   row = "<tr class='problems'><td><a class='name' href='/problem/%s'>%s</a></td><td class='ctst'>%s</td><td class='tags'>%s</td><td class='pts'>0/%s</td><td class='editorial'><a href=/problem/%s/editorial>Editorial</a></td></tr>"
   featured_row = "<tr class='featured_problems'><td><a class='featured_name' href='/problem/%s'>%s</a></td><td class='featured_ctst'>%s</td><td class='featured_tags'>%s</td><td class='featured_pts'>0/%s</td><td class='featured_editorial'><a href=/problem/%s/editorial>Editorial</a></td></tr>"
-  with open("/home/cabox/workspace/contest-grader/files/index.html", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/index.html", "r") as f:
     return f.read() % ("".join(featured_row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getFeaturedProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join(row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join("<a href='/page/%d'>%d</a>%s"%(a-1,a,"&nbsp;"*3 if a != pages else "") for a in range(1,pages+1)),page-1,page+1,str(0 - (page!=0) + (page != pages-1)))
  
 @app.route("/account")
 def account():
-  return open("/home/cabox/workspace/contest-grader/files/account.html").read()
+  return open("/home/cabox/workspace/wcics-grader/files/account.html").read()
 
 @app.route("/stylesheet.css")
 def serveStyleSheet():
-  with open("/home/cabox/workspace/contest-grader/files/stylesheet.css", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/stylesheet.css", "r") as f:
     return Response(f.read(), mimetype="text/css")
 
 @app.route("/favicon.ico")
 def serveIcon():
-  with open("/home/cabox/workspace/contest-grader/files/favicon.ico", "rb") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/favicon.ico", "rb") as f:
     return Response(f.read(), mimetype="image/x-icon")
 
 @app.route("/sudo")
 def sudo():
   if debug: print("User accessed SUDO page!")
-  with open("/home/cabox/workspace/contest-grader/files/sudo.html", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/sudo.html", "r") as f:
     return f.read()
 
 @app.route("/urbad")
@@ -271,12 +297,12 @@ def urbad():
 
 @app.route("/js-sha")
 def js_sha():
-  with open("/home/cabox/workspace/contest-grader/files/jsSHA-2.3.1/src/sha.js", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/jsSHA-2.3.1/src/sha.js", "r") as f:
     return f.read()
 
 @app.route("/authjs")
 def authjs():
-  with open("/home/cabox/workspace/contest-grader/files/auth.js", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/auth.js", "r") as f:
     return f.read()
 
 def auth(username, password, **k): # the **k is to allow sudoAuth(**data) instead of sudoAuth(data["username], data["password"])
@@ -296,6 +322,8 @@ def authuser():
 @app.route("/reguser", methods = ["POST"])
 def reguser():
   data = load_json(request.data)
+  if len(data["username"]) > 24 or len(data["username"]) == 0:
+    return "invalid"
   if data["username"] in users:
     return "userexists"
   else:
@@ -361,7 +389,7 @@ def stop_contest():
   global running
   if sudoAuth(**data):
     running = False
-    with open("/home/cabox/workspace/contest-grader/files/running.txt", "w") as f:
+    with open("/home/cabox/workspace/wcics-grader/files/running.txt", "w") as f:
       f.write("False")
     print("Contest stopped!")
   else:
@@ -374,7 +402,7 @@ def start_contest():
   data = load_json(request.data)
   if sudoAuth(**data):
     running = True
-    with open("/home/cabox/workspace/contest-grader/files/running.txt", "w") as f:
+    with open("/home/cabox/workspace/wcics-grader/files/running.txt", "w") as f:
       f.write("True")
     print("Contest started!")
   else:
@@ -391,10 +419,10 @@ def add_problem():
   return ""
 
 def __add_problem(name):
-  if name in os.listdir("/home/cabox/workspace/contest-grader/files/problems"):
-    with open("/home/cabox/workspace/contest-grader/files/contest.txt", "a", encoding = "utf-8") as f:
+  if name in os.listdir("/home/cabox/workspace/wcics-grader/files/problems"):
+    with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "a", encoding = "utf-8") as f:
       f.write(name + "\n")
-    problem_map[name] = json.loads(open("/home/cabox/workspace/contest-grader/files/problems/%s/problem.json"%name).read())
+    problem_map[name] = json.loads(open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json"%name).read())
     print("Added {name} to the contest!".format(name = name))
   else:
     print("Could not add {name} to the contest because the problem does not exist!".format(name = name))
@@ -403,20 +431,20 @@ def __add_problem(name):
 def rm_problem():
   data = load_json(request.data)
   if sudoAuth(**data):
-    __rm_problem(data["problem_name"].strip())
+    __rm_problem(data["name"].strip())
   else:
     if debug: print("Invalid credentials for removing problem!")
   return ""
 
 def __rm_problem(name):
-  with open("/home/cabox/workspace/contest-grader/files/contest.txt", "r", encoding = "utf-8") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "r", encoding = "utf-8") as f:
     lines = f.read().splitlines()
   index = lines.index(name) if name in lines else -1
   if index != -1:
     print("Removed {name} from the contest!".format(name = name))
   else:
     print("Could not remove {name} from the contest because the problem was not in the contest!".format(name = name))
-  with open("/home/cabox/workspace/contest-grader/files/contest.txt", "w", encoding = "utf-8") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "w", encoding = "utf-8") as f:
     f.write("\n".join(line for line in lines if line != name) + "\n")
 
 @app.route("/reset_contest", methods = ["POST"])
@@ -430,7 +458,7 @@ def reset_contest():
   return ""
 
 def __reset_contest():
-  with open("/home/cabox/workspace/contest-grader/files/contest.txt", "w", encoding = "utf-8") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "w", encoding = "utf-8") as f:
     f.write("")
 
 @app.route("/set_contest", methods = ["POST"])
@@ -443,9 +471,9 @@ def set_contest():
   return ""
 
 def __set_contest(contest):
-  if contest + ".config" in os.listdir("/home/cabox/workspace/contest-grader/files/contests"):
-    with open("/home/cabox/workspace/contest-grader/files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
-      with open("/home/cabox/workspace/contest-grader/files/contest.txt", "w", encoding = "utf-8") as g:
+  if contest + ".config" in os.listdir("/home/cabox/workspace/wcics-grader/files/contests"):
+    with open("/home/cabox/workspace/wcics-grader/files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
+      with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "w", encoding = "utf-8") as g:
         g.write(f.read())
     print("Set the contest to " + contest + "!")
   else:
@@ -461,9 +489,9 @@ def load_problem():
   return ""
 
 def __load_problem(problem):
-  if problem in os.listdir("/home/cabox/workspace/contest-grader/files/problems"):
+  if problem in os.listdir("/home/cabox/workspace/wcics-grader/files/problems"):
     print("Loaded problem " + problem + "!")
-    with open("/home/cabox/workspace/contest-grader/files/problems/%s/problem.json" % problem, "r") as f:
+    with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % problem, "r") as f:
       return f.read()
   else:
     print("Could not find problem " + problem + "!")
@@ -479,9 +507,9 @@ def load_config():
   return ""
 
 def __load_config(contest):
-  if contest + ".config" in os.listdir("/home/cabox/workspace/contest-grader/files/contests"):
+  if contest + ".config" in os.listdir("/home/cabox/workspace/wcics-grader/files/contests"):
     print("Loaded configuration for contest " + contest + "!")
-    with open("/home/cabox/workspace/contest-grader/files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
+    with open("/home/cabox/workspace/wcics-grader/files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
       return f.read().strip()
   else:
     print("Could not find contest " + contest + "!")
@@ -497,7 +525,7 @@ def save_config():
   return ""
 
 def __save_config(contest, config):
-  with open("/home/cabox/workspace/contest-grader/files/contests/" + contest + ".config", "w", encoding = "utf-8") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/contests/" + contest + ".config", "w", encoding = "utf-8") as f:
     f.write(config.strip() + "\n")
   print("Set configuration for contest " + contest + "!")
 
@@ -511,7 +539,7 @@ def del_problem():
   return ""
 
 def __del_problem(name):
-  shutil.rmtree("/home/cabox/workspace/contest-grader/files/problems/" + name)
+  shutil.rmtree("/home/cabox/workspace/wcics-grader/files/problems/" + name)
   print("Deleted {name} permanently!".format(name = name))
   __rm_problem(name)
 
@@ -530,15 +558,15 @@ def __write_problem(data):
     problem = data
     problem["tags"] = list(map(str.strip, problem["tags"].split(",")))
     print("[-- writing problem {problem_id} --]".format(problem_id = problem["id"]))
-    if problem["id"] not in os.listdir("/home/cabox/workspace/contest-grader/files/problems"):
+    if problem["id"] not in os.listdir("/home/cabox/workspace/wcics-grader/files/problems"):
       print("* creating problem folder...")
-      os.mkdir("/home/cabox/workspace/contest-grader/files/problems/" + problem["id"])
-    with open("/home/cabox/workspace/contest-grader/files/problem_format.html", "r", encoding = "utf-8") as f:
+      os.mkdir("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"])
+    with open("/home/cabox/workspace/wcics-grader/files/problem_format.html", "r", encoding = "utf-8") as f:
       smpl = problem["smpl"].split("\n")
       smpl = [(smpl[i * 2], smpl[i * 2 + 1]) for i in range(len(smpl) // 2)]
       print("* writing problem JSON file...")
-      with open("/home/cabox/workspace/contest-grader/files/problems/%s/problem.json" % problem["id"], "w") as f:
-        f.write(json.dumps(problem, indent = 4))
+      with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % problem["id"], "w") as f:
+        f.write(json.dumps(problem))
     print("* done!")
     
 
@@ -561,14 +589,13 @@ def __create_problem(data):
       print("=" * 50)
       print(problem["genr"])
       print("=" * 50)
-      os.chdir("/home/cabox/workspace/contest-grader/files/problems/" + problem["id"])
-      with open(problem["impl_filename"], "w") as f:
+      with open("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["impl_filename"], "w") as f:
         f.write(problem["impl"])
-      with open(problem["genr_filename"], "w") as f:
+      with open("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["genr_filename"], "w") as f:
         f.write(problem["genr"])
       print("* running pre-commands...")
-      os.system(problem["impl_precommand"])
-      os.system(problem["genr_precommand"])
+      if problem["impl_precommand"]: check_output(shlex.split(problem["impl_precommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
+      if problem["genr_precommand"]: check_output(shlex.split(problem["genr_precommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
       pts = list(map(int, problem["pts"].split("/")))
       tls = list(map(int, problem["tls"].split("/"))) * (len(pts) if "/" not in problem["tls"] else 1)
       tcc = list(map(int, problem["tcc"].split("/"))) * (len(pts) if "/" not in problem["tcc"] else 1)
@@ -580,39 +607,37 @@ def __create_problem(data):
         tests.append(attrs)
         attrs["timelimit"] = tl
         attrs["points"] = pt
-        test_cases = []
+        test_cases = [("", "", "")] * tc
         attrs["tests"] = test_cases
         for case in range(tc):
-          print("* generating case %d..."%case)
-          test_in = check_output(genr_command, input = bytes(str(suiteno) + "\n" + str(case), "utf-8"))
-          test_out = hashlib.sha384(bytes("".join(map(chr, check_output(impl_command, input = test_in, stderr = sys.stdout))).strip(), "utf8")).hexdigest()
+          c = case
+          print("* generating case %d of %d..." % (c + 1, tc))
+          test_in = check_output(genr_command, input = bytes(str(suiteno) + "\n" + str(case), "utf-8"), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
+          test_out = hashlib.sha384(bytes("".join(map(chr, check_output(impl_command, input = test_in, stderr = sys.stdout, cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/"))).strip(), "utf8")).hexdigest()
           test_in = test_in.decode("utf-8")
-          print(test_in)
           key = "".join(set(test_in))
           test_in = compress(test_in,key)
-          print(test_in.encode("utf-8"))
-          test_cases.append((test_in, test_out,key))
+          test_cases[c] = (test_in, test_out, key)
       print("* writing test case JSON file...")
-      with open("tests.json", "w") as f:
-        f.write(json.dumps(tests, indent = 4))
+      with open("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + "tests.json", "w") as f:
+        f.write(json.dumps(tests))
       print("* running post-commands...")
-      os.system(problem["impl_postcommand"])
-      os.system(problem["genr_postcommand"])
+      if problem["impl_postcommand"]: check_output(shlex.split(problem["impl_postcommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
+      if problem["genr_postcommand"]: check_output(shlex.split(problem["genr_postcommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
       print("* cleaning up generation files...")
-      os.remove(problem["impl_filename"])
-      os.remove(problem["genr_filename"])
-      os.chdir("../../..")
+      os.remove("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["impl_filename"])
+      os.remove("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["genr_filename"])
       print("* done!")
   except:
     traceback.print_exc()
-    print("Errored on test: (first 1024 bytes) \n"+test_in.decode("utf-8")[:1024])
+    print("Failed on test (First 1024 bytes): " + test_in.decode("utf-8")[:1024])
   update_probs()
   return ""
 
 @app.route("/problem/<id>")
 def problem(id):
-  with open("/home/cabox/workspace/contest-grader/files/problems/%s/problem.json" % id, "r") as p:
-    with open("/home/cabox/workspace/contest-grader/files/problem_format.html", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % id, "r") as p:
+    with open("/home/cabox/workspace/wcics-grader/files/problem_format.html", "r") as f:
       p = json.loads(p.read())
       title = p["title"]
       desc = p["desc"]
@@ -625,17 +650,17 @@ def problem(id):
 @app.route("/problem/<id>/editorial")
 def editorial(id):
   if id not in problem_map:
-    return open("/home/cabox/workspace/contest-grader/files/inv_prob.html").read() % id
+    return open("/home/cabox/workspace/wcics-grader/files/inv_prob.html").read() % id
   p = problem_map[id]
   if "edit" not in p:
-    return open("/home/cabox/workspace/contest-grader/files/inv_editorial.html").read() % (id,p["title"])
-  return open("/home/cabox/workspace/contest-grader/files/editorial.html").read() % (p["title"],id,p["title"],p["edit"].replace("\n","<br />"))
+    return open("/home/cabox/workspace/wcics-grader/files/inv_editorial.html").read() % (id,p["title"])
+  return open("/home/cabox/workspace/wcics-grader/files/editorial.html").read() % (p["title"],id,p["title"],p["edit"].replace("\n","<br />"))
 
 @app.route("/leaderboard")
 def leaderboard():
   problems = getProblems()
   config = [(user, [users[user]["scores"].get(problem, 0) for problem in problems]) for user in get_sorted_users()]
-  return open("/home/cabox/workspace/contest-grader/files/leaderboard.html", "r").read() % "".join(
+  return open("/home/cabox/workspace/wcics-grader/files/leaderboard.html", "r").read() % "".join(
     "<tr><td>%s</td><td>%d</td><td hidden class='rcol leaderboard'>%s</td></tr>" % (html.escape(user), sum(cfg), " / ".join(map(str, cfg))) for user, cfg in config)
 
 @app.route("/enter_submission/<id>")
@@ -645,7 +670,7 @@ def enter_submission(id):
 def submission_file(id, sudomode = False):
   if id not in problem_map:
     id = "hello-world"
-  with open("/home/cabox/workspace/contest-grader/files/template.html", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/template.html", "r") as f:
     return f.read() % (
       "".join(
         "<option value='{language}'>{language}</option>".format(language = language)
@@ -672,11 +697,47 @@ def submit():
 def submit_sudo(userhash, data):
   return process_submission(**json.loads(decode(data)))
 
-@app.route("/submission/<int:id>")
+@app.route("/submission/<id>")
 def submission(id):
   if id not in submissions:
-    return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><p style='font-family:monospace'>Sorry, submission not found with that ID.</p>"
-  return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><a class='buttonlink' href=/>&lt;&lt;&lt; Back</a><br /><br /><a class='buttonlink' href='/enter_submission/_'>Resubmit</a><br /><br />Submitted by '%s' in %s for %s<br /><br />" % submissions[id][:3] + "<br />".join(submissions[id][3])
+    return "<title>Submission not found</title><link rel='stylesheet' href='/stylesheet.css' type='text/css' /><p style='font-family:monospace'>Sorry, submission not found with that ID.</p>"
+  return "<title>Submission</title><link rel='stylesheet' href='/stylesheet.css' type='text/css' /><a class='buttonlink' href='/problem/%s'>&lt;&lt;&lt; Back</a><br /><br /><a class='buttonlink' href='/enter_submission/%s'>Resubmit</a><br /><br />Submitted by '%s' in %s for %s<br /><br />" % tuple(submissions[id][q] for q in [2, 2, 0, 1, 2]) + "<br />".join(stringify(submissions[id][3]))
+
+# 0, b => Test Suite # [$b point(s)]
+# 1, b => Test # passed: $b seconds
+# 2, b => Test # failed: Wrong Answer: $b seconds
+# 3, b => Test # failed: Time Limit Exceeded: $b seconds
+# 4, b => Test # failed: Runtime Error: $b seconds
+# 5, b => Test #..b..# skipped
+
+def stringify(data):
+  data = data[::-1]
+  suite = 0
+  tcase = 0
+  while data:
+    id = data.pop()
+    if id == 0:
+      suite += 1
+      tcase = 0
+      yield "<p class='suite subinfo'>Test Suite %d [%d point%s]</p>" % (suite, data[-1], "" if data.pop() == 1 else "s")
+    elif id == 1:
+      tcase += 1
+      yield "<p class='AC subinfo'>Test %d passed: %s seconds</p>" % (tcase, data.pop())
+    elif id == 2:
+      tcase += 1
+      yield "<p class='WA subinfo'>Test %d failed: Wrong Answer: %s seconds</p>" % (tcase, data.pop())
+    elif id == 3:
+      tcase += 1
+      yield "<p class='TLE subinfo'>Test %d failed: Time Limit Exceeded: %s seconds</p>" % (tcase, data.pop())
+    elif id == 4:
+      tcase += 1
+      yield "<p class='RTE subinfo'>Test %d failed: Runtime Error: %s seconds</p>" % (tcase, data.pop())
+    elif id == 5:
+      for _ in range(data.pop()):
+        tcase += 1
+        yield "<p class='SKIP subinfo'>Test %d skipped</p>" % tcase
+    elif id == 6:
+      yield "<p class='result subinfo'>Total Points: %d / %d</p>" % (data.pop(), data.pop())
 
 @app.route("/run_command",methods = ["POST"])
 def run_command():
@@ -695,19 +756,19 @@ def scores(username):
   return json.dumps(users[username]["scores"])
 @app.route("/todo")
 def todo():
-  with open("/home/cabox/workspace/contest-grader/files/todo.html") as f:
-    return f.read() % open("/home/cabox/workspace/contest-grader/files/todo.txt").read()
+  with open("/home/cabox/workspace/wcics-grader/files/todo.html") as f:
+    return f.read() % open("/home/cabox/workspace/wcics-grader/files/todo.txt").read()
 
 @app.route("/todo/write", methods = ["POST"])
 def todo_write():
   data = load_json(request.data)
-  with open("/home/cabox/workspace/contest-grader/files/todo.txt","w+") as f:
+  with open("/home/cabox/workspace/wcics-grader/files/todo.txt","w+") as f:
     f.write(data['text'])
   return ""
 
 @app.route("/maintenance")
 def maintenance():
-  return open("/home/cabox/workspace/contest-grader/files/maintenance.html").read()
+  return open("/home/cabox/workspace/wcics-grader/files/maintenance.html").read()
 
 @app.route("/change_user", methods = ["POST"])
 def change_user():
@@ -758,7 +819,7 @@ def process_command(command):
     if shutdown is not None:
       shutdown()
   else:
-    threading.Thread(target = lambda: [call(command)] and os.chdir("/home/cabox/workspace/contest-grader")).start()
+    threading.Thread(target = lambda: [call(command)] and os.chdir("/home/cabox/workspace/wcics-grader")).start()
 
 if __name__ == "__main__":
   if len(sys.argv) >= 2:

@@ -12,8 +12,6 @@ welcome-to-my-city
 welcome-to-my-hotel
 string-finding
 string-finding-hard
-binary-search-1
-binary-search-2
 ccc18j3
 ccc18s2
 ccc18j5
@@ -29,9 +27,31 @@ ccc17j2
 ccc17j3
 ccc17j4
 ccc17s3
-<<<<<<< HEAD
 ccc17s1
-ccc16j2
 ccc17s2
-=======
->>>>>>> 263fea749b7fd17a63b35fe69d196bd14864205d
+ccc16s3
+ccc16j1
+ccc16j2
+ccc16j3
+ccc16j4
+ccc16s1
+ccc16s2j5
+ccc16s4
+ccc15j1
+ccc15j2
+ccc15j3
+ccc15j4
+ccc15j5
+ccc15s1
+ccc15s2
+ccc15s4
+ccc15s3
+ccc17s4
+ccc14j1
+ccc14j2
+ccc14j3
+ccc16s5
+ccc14j4s1
+ccc14j5s2
+ccc14s3
+ccc15s5

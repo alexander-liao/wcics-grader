@@ -43,11 +43,6 @@
     <button class="buttonlink enable" disabled onclick="contest_mode('start')">Stop Maintenance</button>
     <button class="buttonlink enable" disabled onclick="set_user_points()">Set user points</button>
     <br /><br /><hr /><br />
-    <button class="buttonlink enable" disabled onclick="load_config()">Load contest configuration</button>
-    <button class="buttonlink enable" disabled onclick="save_config()">Save contest configuration</button>
-    <br /><br />
-    <textarea style="width:49%;height:5em;font-family:monospace" id="config" placeholder="Contest Configuration (Problems)"></textarea>
-    <br /><br /><hr /><br />
     <button class="buttonlink enable" disabled onclick="edit_problem('/create_problem')">Create problem</button>
     <button class="buttonlink enable" disabled onclick="edit_problem('/write_problem')">Write problem</button>
     <button class="buttonlink enable" disabled onclick="load_problem()">Load problem</button>
@@ -189,7 +184,7 @@
 
     function contest_mode(mode) {
       if (confirm("Are you sure you want to " + mode + " the contest?")) {
-        post_data("/" + mode + "_contest",{});
+        post_data("/" + mode + "_contest", {});
       }
     }
 
@@ -201,16 +196,10 @@
         post_data("/set_user_points", {name: name, prob: prob, pnts: pnts});
       }
     }
-    
-
 
     function edit_problem(url) {
-      if (confirm("Are you sure you want to create this problem?")) {
-<<<<<<< HEAD
+      if (confirm("Are you sure you want to edit/create this problem?")) {
         post_data(url, {
-=======
-        post_data(url,{
->>>>>>> 263fea749b7fd17a63b35fe69d196bd14864205d
           "title": get("title"),
           "id": get("id"),
           "desc": get("desc"),
@@ -234,33 +223,15 @@
           "pts": get("pts"),
           "tls": get("tls"),
           "tcc": get("tcc"),
-<<<<<<< HEAD
           "tags": get("tags")
-        });
-        location.reload();
-=======
-        "tags": get("tags")});
-        
->>>>>>> 263fea749b7fd17a63b35fe69d196bd14864205d
+        }, function(a) { document.getElementById("id").value = ""; });
       }
     }
     
     function load_problem() {
       var name = prompt("Please enter the problem ID of the problem you wish to load");
       if (confirm("Are you sure you want to load the problem into the problem creater and overwrite the text areas' contents?")) {
-<<<<<<< HEAD
         post_data("/load_problem", {"problem": name}, function(text) {
-=======
-        data = {problem:name}
-        fetch("/load_problem", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(addSudoInfo(data))
-      }).then(function (response) { return response.text(); }).then(function(text){
->>>>>>> 263fea749b7fd17a63b35fe69d196bd14864205d
           if (text != "") {
             var data = JSON.parse(text);
             for (var key in data) {

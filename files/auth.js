@@ -35,7 +35,7 @@ fetch("/running").then(function(response){return response.text()}).then(function
             console.log("Hey, What are you doing here!")
             window.location.replace("/");
           }
-          if(!running){
+          if(!running && document.getElementsByTagName("TITLE")[0].innerHTML != "Site under Maintenance"){
           console.log("Hey, you're not an admin!");
           window.location.replace("/maintenance");
           }
@@ -151,6 +151,9 @@ function auth() {
         } else if (text == "userexists") {
           console.log("User exists!");
           alert("This username is already in use!");
+        } else if(text == "invalid") {
+          console.log("Username too long!");
+          window.location.replace("/urbad");
         }
       });
     } else {

@@ -80,3 +80,6 @@ table, th, td {
   padding: 8px;
 }
 
+.problem_img {
+  backgournd: rgb(200,200,200);
+}

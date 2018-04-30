@@ -1,3 +1,0 @@
-This problem is entirely based on math. Notice that all factors of a number can be found in O(sqrt(N)), simply by iterating from 1 to sqrt(N), and then any i that divides N, N has factors i and <u><b>N/i</b></u>. Aften you have gotten all factors of a number, you can determine if a number is prime in O(sqrt(N)). To do this, iterate up to sqrt(N) and check divisibility. If N has no factors under sqrt(N), then it is prime. Then, to solve the problem, iterate from 2 to N and find all prime factors, then sum up the totals!
-
-Time Complexity: O(N sqrt(N))

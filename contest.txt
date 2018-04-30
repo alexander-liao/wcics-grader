@@ -12,8 +12,6 @@ welcome-to-my-city
 welcome-to-my-hotel
 string-finding
 string-finding-hard
-binary-search-1
-binary-search-2
 ccc18j3
 ccc18s2
 ccc18j5

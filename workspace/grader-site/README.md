@@ -1,2 +1,0 @@
-# contest-grader
-Contest Grader

@@ -1,1 +1,0 @@
-bash -c "source '$(rvm 2.5.0 do rvm env --path)' && ruby Main.rb"

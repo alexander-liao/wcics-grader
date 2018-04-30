@@ -30,4 +30,11 @@
       Site under maintenance, please be patient.
     </h1>
   </body>
+  <script type="text/javascript">
+  fetch("/running").then(function(response){return response.text();}).then(function(text){
+    if(text == "True"){
+      window.location.replace("/");
+    }
+  });
+  </script>
 </html>
