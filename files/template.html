@@ -41,12 +41,15 @@
     document.getElementById("language").value = "Python 3.6.4";
     function submit() {
       console.log("Submitted!");
-      var username = decodeURIComponent(document.cookie.match(/grader_cred=[^;]+/)[0].split("=")[1]).split(";")[0];
+      var array = decodeURIComponent(document.cookie.match(/grader_cred=[^;]+/)[0].split("=")[1]).split(";");
+      var username = array[0];
+      var password = array[1];
       var code = document.getElementById("code").value;
       var language = document.getElementById("language").value;
       var problem = document.getElementById("problem").value;
       var json = {
         username: username,
+        password: password,
         code: code,
         language: language,
         problem: problem

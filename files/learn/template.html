@@ -1,11 +1,12 @@
+<!DOCTYPE hmtl>
 <html>
   <head>
-    <title>Site under Maintenance</title>
+    <title>%s</title>
     <script src="/js-sha"></script>
     <script src="/authjs"></script>
+    <script src="https://cdn.rawgit.com/showdownjs/showdown/1.8.6/dist/showdown.min.js"></script>
     <link rel="stylesheet" href="/stylesheet.css" type="text/css" />
   </head>
-
   <body>
     <div id="auth_bar">
       <button class="buttonlink" onclick="sign_in()">&nbsp;&nbsp;&nbsp;Sign In&nbsp;&nbsp;&nbsp;</button>
@@ -14,7 +15,7 @@
       <br />
     </div>
     <div id="user_bar" hidden>
-      <a id="home_button"  class="buttonlink enable" disabled href="/account"></a>
+      <a id="home_button" class="buttonlink enable" disabled href="/"></a>
       &nbsp;
       <button class="buttonlink" onclick="sign_out()">&nbsp;&nbsp;&nbsp;Sign Out&nbsp;&nbsp;&nbsp;</button>
       <br />
@@ -26,8 +27,6 @@
       <input id="repeated" style="width:25%%" type="password" placeholder="Password Again" hidden />
       <button class="buttonlink" onclick="auth()">&nbsp;&nbsp;&nbsp;&gt;&gt;&gt;&nbsp;&nbsp;&nbsp;</button>
     </div>
-    <h1>
-      Site under maintenance, please be patient.
-    </h1>
+    <p>%s</p>
   </body>
 </html>

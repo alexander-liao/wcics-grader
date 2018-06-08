@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Programming Competition</title>
+    <script src="/js-sha"></script>
+    <script src="/authjs"></script>
+    <link rel="stylesheet" href="/stylesheet.css" type="text/css" />
+  </head>
+
+  <body style="line-height: 2em">
+    <h1>Tank Game Documentation</h1>
+    <h2>Introduction</h2>
+    The Tank Game was an idea made by Andy Bao (leader of WCI CS Club 2016 - 2018) in the year of 2016 - 2017 to provide club members with a programming-related activity that was both fun and educational. Users submit code to control teams of tanks which fight in a 6v6 deathmatch between two user submissions. The language used for this game is Python, and users will submit code that follows a certain format, which is outlined below.
+    <h2>Basic Format</h2>
+    In the Python script, two functions are required: <a class="inline_code">request_move(**state)</a> and <a class="inline_code">register_hit(**shot)</a>. These must be declared in the global scope with this exact spelling and case (the names of the arguments do not matter). <a class="inline_code">request_move(state)</a> is called when it is the bot's turn to make a move and <a class="inline_code">register_hit(shot)</a> is called to tell a bot that it has been hit (but it cannot make a move until its turn). The same instance will be called for all tanks on that team; the ID of the applicable tank is supplied in the arguments.
+    <h2>Function: Request Move</h2>
+    <a class="inline_code">request_move(**state)</a> takes in the global state of the fight and outputs a move. The state is passed as an unpacked dict, so you should use <a class="inline_code">**state</a> as the argument for convenience, but if you really want, you can specify all of the keyword arguments individually. The following arguments are passed to the function: <a class="inline_code">tanksByHP</a>, <a class="inline_code">tanksByDistance</a>, <a class="inline_code">tanksByThreat</a>, <a class="inline_code">tanksByOrder</a>, <a class="inline_code">friendlyTanksByHP</a>, <a class="inline_code">friendlyTanksByDistance</a>, <a class="inline_code">friendlyTanksByThreat</a>, <a class="inline_code">friendlyTanksByOrder</a>, <a class="inline_code">bullets</a>, <a class="inline_code">friendlyBullets</a>, <a class="inline_code">HP</a>, <a class="inline_code">shieldHP</a> <a class="inline_code">location</a>, <a class="inline_code">orientation</a>, and <a class="inline_code">id</a>. The <a class="inline_code">tanksBy?</a> arguments are arrays of enemy tanks sorted by increasing HP, increasing distance, decreasing threat (threat is the number of frames until it is able to fire a shot directly at you), and by order of turn, respectively. The <a class="inline_code">friendlyTanksBy?</a> are arrays of friendly tanks sorted in the same ways as mentioned above. <a class="inline_code">bullets</a> and <a class="inline_code">friendlyBullets</a> are arrays of bullets stored as a tuple <a class="inline_code">(x, y, direction: angle, distance)</a> representing enemy bullets and friendly bullets, respectively, where x and y are its location, direction is its travel direction as an angle in degrees (see <a class="inline_code">orientation</a> for details), and distance is its distance travelled so far. <a class="inline_code">HP</a>, <a class="inline_code">shieldHP</a>, <a class="inline_code">location</a>, <a class="inline_code">orientation</a>, and <a class="inline_code">id</a> represent the current state of your tank, which are your health points (out of 10000), remaining shield durability (out of 6000), location (coordinates in the form of an (x, y)-tuple in the range [-10000, 10000]), orientation of the turret (as an angle in degrees, where 0 indicates a bearing in the +x direction and a larger angle rotates counterclockwise), and the ID of the tank on its team (from 0 to 5, where 0 is the first tank to make a move on that team), respectively. Each tank in the enemy and friendly tank arrays are also stored in the same way with their HP, shield HP, location, orientation, and id.
+    <br /><br />
+    The tank should return a tuple in the form <a class="inline_code">(shield: bool, movementX: float, movementY: float, desiredTurretAngle: float, fire: int, fireAnyway: bool, message: object)</a>.
+    <ul>
+      <li><a class="inline_code">shield</a> represents whether or not you want your shield up (requires the shield to have more than 0 HP; when it's up, it takes damage from shots, and when it's down, it regenerates at 5 HP per frame, requiring 20 seconds to fully regenerate from 0 to full).</li>
+      <li><a class="inline_code">movementX</a> and <a class="inline_code">movementY</a> represent the amount you want to move. You can move a maximum of 15 units (euclidean distance) per frame, so if you attempt to move more, it will reduce your movement to 15 units in the same direction.</li>
+      <li><a class="inline_code">desiredTurretAngle</a> represents the angle that you want your turret to face. If this is not in the range <a class="inline_code">(-360, 360)</a>, the turret will not move. The turret rotates at up to 3&deg; per frame (2 seconds to rotate 360&deg;), and will rotate at maximum speed unless it reaches the desired angle before the 3&deg;.</li>
+      <li><a class="inline_code">fire</a> represents the firing ID; 0 indicates no fire, 1 indicates standard fire (500 damage, 20 frames reload time, 3 shots per second, &pm;2.5&deg; error), 2 indicates rapid fire (250 damage, 5 frame reload time, 12 shots per second, &pm;5&deg; error), and 3 indicates sniper shot (1000 damage, 120 frame reload time, 1 shot per 2 seconds, &pm;0.5&deg; error).</li>
+      <li><a class="inline_code">fireAnyway</a> represents whether or not you want to fire if the turret is not at the right angle. <a class="inline_code">false</a> means that it will only apply the shot if the turret rotated into the desired angle on that frame; otherwise, it will fire anyway.</li></ul>
+    The defaults are no shield, no movement, no turret movement, no fire, and don't fire anyway. If any elements are missing from the tuple/list or the type is wrong (int is fine for float and any object that has a yes/no value works for bool), the default will be applied. If the return value is not a tuple or a list, the defaults will all be applied.
+    <h2>Function: Register Hit</h2>
+    <a class="inline_code">register_hit(**shot)</a> takes in the value of the shot and doesn't output anything. As with <a class="inline_code">request_move</a>, you can specify all of the keyword arguments, but that's unnecessarily complicated. The following arguments are passed to the function: <a class="inline_code">shooterID</a>, <a class="inline_code">damage</a>, <a class="inline_code">intendedDamage</a>, <a class="inline_code">type</a>, <a class="inline_code">shieldCount</a>, <a class="inline_code">HP</a>, and <a class="inline_code">id</a>. These represent the ID of the tank that shot you, the amount of damage it did to you, the amount of damage intended by the shot, the type of shot (1 is standard, 2 is burst, 3 is sniper), how many shields blocked damage, and the ID of the tank that was hit, respectively. This function is optional if you don't care about who shot you, because your HP will be updated in the next <a class="inline_code">request_move</a> function call.
+    <h2>Mechanisms</h2>
+    <h3>Shield</h3>
+    The shield covers all tanks whose center is within 200 units of the tank generating the shield. Whenever a tank inside the shield is hit, the shield attempts to block 50% of the damage, and will take that damage off of its own HP. If the shield has less HP than half of the shot's damage, the shield will break and absorb as much damage as the amount of HP it had left. If a tank is covered by multiple shields, the shield with the highest HP will block first, with tie-break by distance to the target shield, with tie-break by tank ID. Any tank that is holding up a shield can only move 10 units in a frame.
+    <h3>Event Order</h3>
+    On each frame, the tanks move in parallel. Firstly, all of the functions are called on the current state. Then, shields are all updated. Next, all tanks move and rotate their turrets. Finally, all tanks fire at the same time. The bullet moves in the same frame that it was fired. The gun starts reloading during the same frame that it fired.
+    <h3>Firing and bullet mechanisms</h3>
+    Attempting to fire while the gun is reloading does nothing. The amount of damage done by the bullet is divided by the distance travelled over 9000, squared. A bullet moves at 300 units per frame, crossing the entire map (grid-aligned) in just over 1.1 seconds.
+    <h3>Death</h3>
+    When a tank reaches 0 HP, it will die, leaving it unable to do anything anymore. Shots will still hit it, so it can be used to block shots; however, shields will not take damage if a dead tank is hit inside of it. Dead tanks have 1 million structural integrity (HP) and if that ever runs out, the tank body is destroyed.
+  </body>
+
+  <style type="text/css">
+    body, button, select, option, input {
+      font-family: monospace;
+    }
+  </style>
+</html>

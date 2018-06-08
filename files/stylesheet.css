@@ -80,38 +80,25 @@ table, th, td {
   padding: 8px;
 }
 
-.subinfo {
-  padding: 0px;
-  line-height: 0px;
-  margin: 0px;
+.problem_img {
+  backgournd: #c8c8c8;
 }
 
-.suite {
-  font-weight: bold;
-  padding-top: 1em;
-  padding-bottom: 0.25em;
+.inline_code {
+  text-decoration: none;
+  background-color: #333;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
 
-.AC {
-  color: green;
-}
-
-.WA {
-  color: #ff4444;
-}
-
-.TLE {
-  color: grey;
-}
-
-.RTE {
-  color: #ffff44;
-}
-
-.SKIP {
-  color: #aaa;
-}
-
-.problem_image {
-  background: rgb(200,200,200);
+canvas {
+  border: 1px solid white;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  position: absolute;
 }

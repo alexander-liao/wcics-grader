@@ -194,8 +194,10 @@ def update_users():
 
 submissions = json.load(open("/home/cabox/workspace/wcics-grader/files/submissions.json"))
 
-def process_submission(username, code, language, problem):
+def process_submission(username, password, code, language, problem):
   username = username.strip()
+  if users[username]["password"] != password:
+    return "/passwordfail"
   if len(username) > 24 or len(username) == 0:
     return "/urbad"
   submission = (username, language, problem, [])
@@ -271,6 +273,16 @@ def servePage(page):
   with open("/home/cabox/workspace/wcics-grader/files/index.html", "r") as f:
     return f.read() % ("".join(featured_row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getFeaturedProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join(row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join("<a href='/page/%d'>%d</a>%s"%(a-1,a,"&nbsp;"*3 if a != pages else "") for a in range(1,pages+1)),page-1,page+1,str(0 - (page!=0) + (page != pages-1)))
  
+@app.route("/tankdoc")
+def tankdoc():
+  with open("/home/cabox/workspace/wcics-grader/files/tankdoc.html") as f:
+    return f.read()
+
+@app.route("/tanksim")
+def tanksim():
+  with open("/home/cabox/workspace/wcics-grader/files/tanksim.html") as f:
+    return f.read()
+  
 @app.route("/account")
 def account():
   return open("/home/cabox/workspace/wcics-grader/files/account.html").read()
@@ -278,6 +290,11 @@ def account():
 @app.route("/stylesheet.css")
 def serveStyleSheet():
   with open("/home/cabox/workspace/wcics-grader/files/stylesheet.css", "r") as f:
+    return Response(f.read(), mimetype="text/css")
+
+@app.route("/learnsheet.css")
+def serveLearnSheet():
+  with open("/home/cabox/workspace/wcics-grader/files/learnsheet.css", "r") as f:
     return Response(f.read(), mimetype="text/css")
 
 @app.route("/favicon.ico")
@@ -295,14 +312,23 @@ def sudo():
 def urbad():
   return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><code><a class='buttonlink' href='/'>&lt;&lt;&lt; Back</a>&nbsp;&nbsp;<a class='buttonlink' href='/enter_submission'>Submit &gt;&gt;&gt;</a></code><h1>Username cannot exceed 24 characters or be blank</h1>"
 
+@app.route("/passwordfail")
+def passwordfail():
+  return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><code><a class='buttonlink' href='/'>&lt;&lt;&lt; Back</a>&nbsp;&nbsp;<a class='buttonlink' href='/enter_submission'>Submit &gt;&gt;&gt;</a></code><h1>Password was unexpectedly changed between signin and submission, or you are trying to enter submissions through JS fetch without knowing the password field and hoping I didn't check :)</h1>"
+
 @app.route("/js-sha")
 def js_sha():
-  with open("/home/cabox/workspace/wcics-grader/files/jsSHA-2.3.1/src/sha.js", "r") as f:
+  with open("/home/cabox/workspace/wcics-grader/jsSHA-2.3.1/src/sha.js", "r") as f:
     return f.read()
 
 @app.route("/authjs")
 def authjs():
   with open("/home/cabox/workspace/wcics-grader/files/auth.js", "r") as f:
+    return f.read()
+
+@app.route("/tankjs")
+def tankjs():
+  with open("/home/cabox/workspace/wcics-grader/files/tank.js", "r") as f:
     return f.read()
 
 def auth(username, password, **k): # the **k is to allow sudoAuth(**data) instead of sudoAuth(data["username], data["password"])
@@ -634,6 +660,32 @@ def __create_problem(data):
   update_probs()
   return ""
 
+@app.route("/learnsudo")
+def learnsudo():
+  with open("/home/cabox/workspace/wcics-grader/files/learn/learnsudo.html", "r") as f:
+    return f.read()
+
+@app.route("/load_lesson/<id>")
+def load_lesson(id):
+  with open("/home/cabox/workspace/wcics-grader/files/learn/lessons/%s.json" % id, "r") as f:
+    return f.read()
+
+@app.route("/save_lesson/<id>", methods = ["POST"])
+def save_lesson(id):
+  with open("/home/cabox/workspace/wcics-grader/files/learn/lessons/%s.json" % id, "w") as f:
+    f.write(json.dumps({
+      "id": id,
+      "title": request.json["title"],
+      "body": request.json["body"],
+      "bodyhtml": request.json["bodyhtml"]
+    }))
+  return ""
+
+@app.route("/learn/<id>")
+def learn(id):
+  with open("/home/cabox/workspace/wcics-grader/files/learn/lessons/%s.json" % id, "r") as f:
+    return json.loads(f.read())["bodyhtml"]
+
 @app.route("/problem/<id>")
 def problem(id):
   with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % id, "r") as p:
@@ -645,7 +697,7 @@ def problem(id):
       inpt = p["inpt"]
       outp = p["outp"]
       smpl = p["smpl"].split("\n")
-      return f.read() % (title, p['id'],p['id'], title, desc.replace("\n", "<br />"), inpt.replace("\n", "<br />"), outp.replace("\n", "<br />"), subt.replace("\n", "<br />"), "\n".join("<h3>Sample Input</h3>\n<table class='sample'><tr><td><code>%s</code></td></tr></table>\n<h3>Sample Output</h3>\n<table class='sample'><tr><td><code>%s</code></td></tr></table>" % (smpl[2*r], smpl[2*r+1]) for r in range(len(smpl)//2)))
+      return f.read() % (title, p['id'],p['id'], title, desc.replace("\n", "<br />"), inpt.replace("\n", "<br />"), outp.replace("\n", "<br />"), subt.replace("\n", "<br />"), "\n".join("<h3>Sample Input</h3>\n<table class='sample'><tr><td><code>%s</code></td></tr></table>\n<h3>Sample Output</h3>\n<table class='sample'><tr><td><code>%s</code></td></tr></table>" % (smpl[2 * r], smpl[2 * r + 1]) for r in range(len(smpl) // 2)))
 
 @app.route("/problem/<id>/editorial")
 def editorial(id):
@@ -667,6 +719,11 @@ def leaderboard():
 def enter_submission(id):
   return submission_file(id, False)
 
+@app.route("/tank_game")
+def tank_game():
+  with open("/home/cabox/workspace/wcics-grader/files/tank_game.html") as f:
+    return f.read()
+  
 def submission_file(id, sudomode = False):
   if id not in problem_map:
     id = "hello-world"

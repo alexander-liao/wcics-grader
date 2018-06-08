@@ -15,7 +15,7 @@
       <br />
     </div>
     <div id="user_bar" hidden>
-      <a id="home_button"  class="buttonlink enable" disabled href="/"></a>
+      <a id="home_button" class="buttonlink enable" disabled href="/"></a>
       &nbsp;
       <button class="buttonlink" onclick="sign_out()">&nbsp;&nbsp;&nbsp;Sign Out&nbsp;&nbsp;&nbsp;</button>
       <br />
@@ -116,7 +116,7 @@
     
     function run_command() {
       var command = get("cmd");
-      if (confirm("Are you sure you wish to run the command '" + command + "'?")) {
+      if (command && confirm("Are you sure you wish to run the command '" + command + "'?")) {
         post_data("/run_command",{command: command});
       }
     }
@@ -156,28 +156,28 @@
     
     function load_config() {
       var config = prompt("Please enter the name of the contest configuration you wish to load")
-      if (confirm("Are you sure you want to load '" + config + "' and overwrite the text area's contents?")) {
+      if (config && confirm("Are you sure you want to load '" + config + "' and overwrite the text area's contents?")) {
         post_data("/load_config", {"contest": config}, function(text) { document.getElementById("config").value = text });
       }
     }
     
     function save_config() {
       var config = prompt("Please enter the name of the contest configuration you wish to modify")
-      if (confirm("Are you sure you want to save the current configuration to '" + config + "'? THIS ACTION IS IRREVERSIBLE")) {
+      if (config && confirm("Are you sure you want to save the current configuration to '" + config + "'? THIS ACTION IS IRREVERSIBLE")) {
         post_data("/save_config", {"contest": config, "config": get("config")});
       }
     }
     
     function set_contest() {
       var config = prompt("Please enter the name of the contest you wish to run")
-      if (confirm("Are you sure you want to set the contest to '" + config + "'? This will reset the leaderboard. THIS ACTION IS IRREVERSIBLE")) {
+      if (config && confirm("Are you sure you want to set the contest to '" + config + "'? This will reset the leaderboard. THIS ACTION IS IRREVERSIBLE")) {
         post_data("/set_contest", {"contest": config});
       }
     }
     
     function del_problem() {
       var name = prompt("Please enter the name of the problem you wish to delete");
-      if (confirm("Are you sure you want to delete '" + name + "'? THIS ACTION IS IRREVERSIBLE")) {
+      if (name && confirm("Are you sure you want to delete '" + name + "'? THIS ACTION IS IRREVERSIBLE")) {
         post_data("/del_problem", {"problem_name": name});
       }
     }
@@ -230,7 +230,7 @@
     
     function load_problem() {
       var name = prompt("Please enter the problem ID of the problem you wish to load");
-      if (confirm("Are you sure you want to load the problem into the problem creater and overwrite the text areas' contents?")) {
+      if (name && confirm("Are you sure you want to load the problem into the problem creater and overwrite the text areas' contents?")) {
         post_data("/load_problem", {"problem": name}, function(text) {
           if (text != "") {
             var data = JSON.parse(text);

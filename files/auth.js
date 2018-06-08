@@ -31,7 +31,7 @@ fetch("/running").then(function(response){return response.text()}).then(function
         return response.text();
       }).then(function(text) {
         if (text != "auth") {
-          if(document.getElementsByTagName("TITLE")[0].innerHTML == "SUDO"){
+          if(document.getElementsByTagName("TITLE")[0].innerHTML == "SUDO" || document.getElementsByTagName("TITLE")[0].innerHTML == "LearnSudo"){
             console.log("Hey, What are you doing here!")
             window.location.replace("/");
           }

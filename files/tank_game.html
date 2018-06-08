@@ -30,9 +30,9 @@
       <button class="buttonlink" onclick="auth()">&nbsp;&nbsp;&nbsp;&gt;&gt;&gt;&nbsp;&nbsp;&nbsp;</button>
     </div>
     <hr />
-    === Code === <br /><br /><textarea id="code"></textarea><br /><br />
-    Language: <select id="language">%s</select><br /><br />
-    Problem: <select id="problem">%s</select><br /><br />
+    <h2>WARNING: Code is not saved anywhere on the server; it is discarded after the animation is done! Save your code elsewhere.</h2>
+    <hr />
+    === Code === <a href="/tankdoc">[Documentation]</a><br /><br /><textarea id="code" style="width:100%"></textarea><br /><br />
     <button class="buttonlink enable" onclick="submit()" disabled>Submit!</button>
   </body>
 
@@ -41,17 +41,16 @@
     document.getElementById("language").value = "Python 3.6.4";
     function submit() {
       console.log("Submitted!");
-      var username = decodeURIComponent(document.cookie.match(/grader_cred=[^;]+/)[0].split("=")[1]).split(";")[0];
+      var array = decodeURIComponent(document.cookie.match(/grader_cred=[^;]+/)[0].split("=")[1]).split(";");
+      var username = array[0];
+      var password = array[1];
       var code = document.getElementById("code").value;
-      var language = document.getElementById("language").value;
-      var problem = document.getElementById("problem").value;
       var json = {
         username: username,
-        code: code,
-        language: language,
-        problem: problem
+        password: password,
+        code: code
       };
-      fetch("/%s", {
+      fetch("/tank_submit", {
         headers: {
           "Accept": "application/json",
           "Content-Type": "application/json",

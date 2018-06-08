@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LearnSUDO</title>
+    <script src="/js-sha"></script>
+    <script src="/authjs"></script>
+    <script src="https://cdn.rawgit.com/showdownjs/showdown/1.8.6/dist/showdown.min.js"></script>
+    <link rel="stylesheet" href="/stylesheet.css" type="text/css" />
+    <link rel='stylesheet' href='/learnsheet.css' type="text/css" />
+  </head>
+
+  <body>
+    <div id="auth_bar">
+      <button class="buttonlink" onclick="sign_in()">&nbsp;&nbsp;&nbsp;Sign In&nbsp;&nbsp;&nbsp;</button>
+      &nbsp;
+      <button class="buttonlink" onclick="sign_up()">&nbsp;&nbsp;&nbsp;Sign Up&nbsp;&nbsp;&nbsp;</button>
+      <br />
+    </div>
+    <div id="user_bar" hidden>
+      <a id="home_button" class="buttonlink enable" disabled href="/"></a>
+      &nbsp;
+      <button class="buttonlink" onclick="sign_out()">&nbsp;&nbsp;&nbsp;Sign Out&nbsp;&nbsp;&nbsp;</button>
+      <br />
+    </div>
+    <div id="sign-in" hidden>
+      <br />
+      <input id="username" style="width:25%%" type="text" placeholder="Username" />
+      <input id="password" style="width:25%%" type="password" placeholder="Password" />
+      <input id="repeated" style="width:25%%" type="password" placeholder="Password Again" hidden />
+      <button class="buttonlink" onclick="auth()">&nbsp;&nbsp;&nbsp;&gt;&gt;&gt;&nbsp;&nbsp;&nbsp;</button>
+    </div>
+    <hr /><br />
+    <button class="buttonlink enable" disabled onclick="load_lesson()">Load Lesson</button>
+    <button class="buttonlink enable" disabled onclick="save_lesson()">Save Lesson</button>
+    <br /><br />
+    <input type="text" style="width:80%" id="title" placeholder="Title" />
+    <br /><br />
+    <textarea style="width:80%;height:40vh;" id="content" placeholder="Lesson Body" oninput="updatePreview()"></textarea>
+    <hr />
+    Preview
+    <hr />
+    <div id="preview"></div>
+  </body>
+
+  <script type="text/javascript">
+    var converter = new showdown.Converter();
+    
+    function addSudoInfo(data) {
+      var array = decodeURIComponent(document.cookie.match(/grader_cred=[^;]+/)[0].split("=")[1]).split(";");
+      data["username"] = array[0];
+      data["password"] = array[1];
+      return data;
+    }
+
+    function post_data(url, data, callback) {
+      data = data || {};
+      callback = callback || (e => e);
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(addSudoInfo(data))
+      })
+      .then(function (response) { return response.text(); })
+      .then(callback);
+    }
+
+    function load_lesson() {
+      var id = prompt("Please enter the lesson ID of the lesson you wish to load");
+      if (id && confirm("Are you sure you want to load the lesson and overwrite the text area's contents?")) {
+        fetch("/load_lesson/" + id).then(function(response) {
+          return response.text();
+        }).then(function(text) {
+          var obj = JSON.parse(text);
+          document.getElementById("title").value = obj.title;
+          document.getElementById("content").value = obj.body;
+        });
+      }
+    }
+    
+    function save_lesson() {
+      var id = prompt("Please enter the lesson ID to which you wish to save");
+      if (id && confirm("Are you sure you want to overwrite the lesson saved in '" + id + "'?")) {
+        post_data("/save_lesson/" + id, {
+          "title": document.getElementById("title").value,
+          "body": document.getElementById("content").value,
+          "bodyhtml": "<link rel='stylesheet' href='/stylesheet.css' type='text/css' />\n<link rel='stylesheet' href='/learnsheet.css' type='text/css' />\n" + converter.makeHtml(document.getElementById("content").value)
+        });
+      }
+    }
+    
+    function updatePreview() {
+      document.getElementById("preview").innerHTML = converter.makeHtml(document.getElementById("content").value);
+    }
+  </script>
+</html>

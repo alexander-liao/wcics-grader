@@ -3,7 +3,6 @@ English {
   
 }
 History { 
-  Questions de L'holocauste
 
   Bon-Patron DISSERTATIONS
 } 
@@ -14,5 +13,7 @@ Strings {
   
 }
 Other{
-  
+  learn some java
+  HISTORY TEST
+  MUSIC HISTORY TEST
 }

@@ -1,0 +1,20 @@
+code {
+  background-color: #444;
+  color: #fff;
+  padding: 2px 5px;
+  display: inline-block;
+}
+
+pre {
+  background-color: #444;
+  color: #fff;
+  width: 100%;
+}
+
+blockquote {
+  background-color: #366;
+  color: #fff;
+  margin: 0;
+  padding: 1px 16px;
+  border-left: 4px solid #144;
+}
