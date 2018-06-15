@@ -11,14 +11,12 @@
 
   <body>
     <div id="auth_bar">
-      <button class="buttonlink" onclick="sign_in()">&nbsp;&nbsp;&nbsp;Sign In&nbsp;&nbsp;&nbsp;</button>
-      &nbsp;
+      <button class="buttonlink" onclick="sign_in()">&nbsp;&nbsp;&nbsp;Sign In&nbsp;&nbsp;&nbsp;</button> &nbsp;
       <button class="buttonlink" onclick="sign_up()">&nbsp;&nbsp;&nbsp;Sign Up&nbsp;&nbsp;&nbsp;</button>
       <br />
     </div>
     <div id="user_bar" hidden>
-      <a id="home_button" class="buttonlink enable" disabled href="/"></a>
-      &nbsp;
+      <a id="home_button" class="buttonlink enable" disabled href="/"></a> &nbsp;
       <button class="buttonlink" onclick="sign_out()">&nbsp;&nbsp;&nbsp;Sign Out&nbsp;&nbsp;&nbsp;</button>
       <br />
     </div>
@@ -30,21 +28,35 @@
       <button class="buttonlink" onclick="auth()">&nbsp;&nbsp;&nbsp;&gt;&gt;&gt;&nbsp;&nbsp;&nbsp;</button>
     </div>
     <hr /><br />
-    <button class="buttonlink enable" disabled onclick="load_lesson()">Load Lesson</button>
-    <button class="buttonlink enable" disabled onclick="save_lesson()">Save Lesson</button>
-    <br /><br />
-    <input type="text" style="width:80%" id="title" placeholder="Title" />
-    <br /><br />
-    <textarea style="width:80%;height:40vh;" id="content" placeholder="Lesson Body" oninput="updatePreview()"></textarea>
+    <button class="buttonlink enable" disabled onclick="load_series()">Load Lesson Series</button>
+    <button class="buttonlink enable" disabled onclick="save_series()">Save All Edits</button>
+    <button class="buttonlink enable" disabled onclick="add_lesson()">Add New Blank Lesson</button>
+    <button class="buttonlink enable" disabled onclick="del_series()">Delete Series ID</button>
+    <button class="buttonlink enable" disabled onclick="del_lesson()">Delete Lesson ID</button><br /><br />
+    <button class="buttonlink enable" disabled onclick="move_series()">Move Series</button>
+    <button class="buttonlink enable" disabled onclick="move_lesson()">Move Lesson</button>
     <hr />
-    Preview
+    <button class="buttonlink enable" disabled onclick="intro()">&lt;&lt;&lt; Intro</button>
+    <button class="buttonlink enable" disabled onclick="first()">&lt;&lt; First</button>
+    <button class="buttonlink enable" disabled onclick="prev()">&lt; Prev</button>
+    <button class="buttonlink enable" disabled onclick="next()">Next &gt;</button>
+    <button class="buttonlink enable" disabled onclick="last()">Last &gt;&gt;</button>
+    <br /><br />
+    <input type="text" style="width:80%" id="title" placeholder="Title" oninput="update()" />
+    <br /><br />
+    <textarea style="width:80%;height:40vh;" id="content" placeholder="Lesson Body" oninput="update()"></textarea>
+    <hr /> Preview
     <hr />
     <div id="preview"></div>
   </body>
 
   <script type="text/javascript">
     var converter = new showdown.Converter();
-    
+    var data = {};
+    var lessonID = "";
+    var lessonIndex = 0;
+    var lessonCnt = 0;
+
     function addSudoInfo(data) {
       var array = decodeURIComponent(document.cookie.match(/grader_cred=[^;]+/)[0].split("=")[1]).split(";");
       data["username"] = array[0];
@@ -56,41 +68,165 @@
       data = data || {};
       callback = callback || (e => e);
       fetch(url, {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(addSudoInfo(data))
-      })
-      .then(function (response) { return response.text(); })
-      .then(callback);
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(addSudoInfo(data))
+        })
+        .then(function(response) {
+          return response.text();
+        })
+        .then(callback);
     }
 
-    function load_lesson() {
-      var id = prompt("Please enter the lesson ID of the lesson you wish to load");
-      if (id && confirm("Are you sure you want to load the lesson and overwrite the text area's contents?")) {
-        fetch("/load_lesson/" + id).then(function(response) {
-          return response.text();
-        }).then(function(text) {
-          var obj = JSON.parse(text);
-          document.getElementById("title").value = obj.title;
-          document.getElementById("content").value = obj.body;
-        });
+    function load_series() {
+      var id = prompt("What series would you like to load?");
+      if (id) post_data("/load_series", {
+        "seriesID": id
+      }, function(text) {
+        data = JSON.parse(text);
+        lessonID = "intro";
+        if (findLesson("intro") == -1) {
+          data["lessons"].unshift({
+            "lessonID": "intro"
+          });
+        }
+        lessonCnt = data["lessons"].length;
+        intro();
+        update();
+      });
+    }
+
+    function save_series() {
+      var id = prompt("Save series under what ID?");
+      if (id) post_data("/save_series", {
+        "seriesID": id,
+        "data": data
+      });
+    }
+    
+    function del_series(){
+      var id = prompt("What series to delete?");
+      if(id&&confirm("Are you sure you want to delete series '"+id+"'?")){
+        post_data("/del_series",{"seriesID":id});
+        if(id==data["seriesID"]){
+          data = {};
+          lessonID = "";
+          lessonIndex = 0;
+          lessonCnt = 0;
+          document.getElementById("content").value = "";
+          document.getElementById("title").value = "";
+          document.getElementById("preview").innerHTML = "";
+        }
       }
     }
     
-    function save_lesson() {
-      var id = prompt("Please enter the lesson ID to which you wish to save");
-      if (id && confirm("Are you sure you want to overwrite the lesson saved in '" + id + "'?")) {
-        post_data("/save_lesson/" + id, {
-          "title": document.getElementById("title").value,
-          "body": document.getElementById("content").value,
-          "bodyhtml": "<link rel='stylesheet' href='/stylesheet.css' type='text/css' />\n<link rel='stylesheet' href='/learnsheet.css' type='text/css' />\n" + converter.makeHtml(document.getElementById("content").value)
-        });
+    function del_lesson(){
+      var id = prompt("What lesson to delete?");
+      if(id&&confirm("Are you sure you want to delete lesson '"+id+"'?")&&findLesson(id)!=-1){
+        post_data("/del_lesson",{"seriesID":data["seriesID"],"index":findLesson(id)});
+        lessonCnt--;
+        if(lessonIndex==lessonCnt) lessonIndex--;
+        reload_lesson();
       }
     }
     
+    function move_lesson(){
+      var id = prompt("What lesson to move");
+      if(id){
+        var index = prompt("What index should it be inserted before (0 indexed)?");
+        if(findLesson(id)!=-1)post_data("/move_lesson",{"seriesID":data["seriesID"],"index":index,"pop_index":findLesson(id)});
+      }
+    }
+    
+    function move_series(){
+      var id = prompt("What series to move?");
+      if(id){
+        var index = prompt("What index should it be inserted before (0 indexed)?");
+        post_data("/move_series",{"seriesID":id,"index":index});
+      }
+    }
+
+    function findLesson(id) {
+      for (var index in data["lessons"]) {
+        if (data["lessons"][index]["lessonID"] == id) return index;
+      }
+      return -1;
+    }
+
+    function add_lesson() {
+      lessonID = prompt("What should the new LessonID be?");
+      data["lessons"].push({
+        "lessonID": lessonID
+      });
+      lessonCnt++;
+      lessonIndex = lessonCnt-1;
+      document.getElementById("content").value = "";
+      document.getElementById("title").value = "";
+      update();
+    }
+
+    function intro() {
+      lessonID = "intro";
+      lessonIndex = 0;
+      reload_lesson();
+    }
+
+    function next() {
+      if (lessonIndex + 1 != lessonCnt){
+        lessonIndex = (lessonIndex + 1) % lessonCnt;
+      }
+      reload_lesson();
+    }
+
+    function prev() {
+      if(lessonIndex>1){
+        lessonIndex = (lessonIndex - 1) % lessonCnt;
+      }
+      reload_lesson();
+    }
+
+    function first() {
+      if (lessonCnt - 1) {
+        lessonIndex = 1;
+        reload_lesson();
+      }
+    }
+
+    function last() {
+      lessonIndex = lessonCnt - 1;
+      reload_lesson();
+    }
+
+    function reload_lesson() {
+      if(!data["lessons"][lessonIndex]["body"]){
+        data["lessons"][lessonIndex]["body"] = "";
+      }
+      if(!data["lessons"][lessonIndex]["title"]){
+        data["lessons"][lessonIndex]["title"] = "";
+      }
+      document.getElementById("content").value = data["lessons"][lessonIndex]["body"];
+      document.getElementById("title").value = data["lessons"][lessonIndex]["title"];
+      update();
+    }
+
+    function toHTML(markdown) {
+      return converter.makeHtml(markdown);
+    }
+
+    function update() {
+      updatePreview();
+      saveFile();
+    }
+
+    function saveFile() {
+      data["lessons"][lessonIndex]["bodyHTML"] = document.getElementById("preview").innerHTML;
+      data["lessons"][lessonIndex]["body"] = document.getElementById("content").value;
+      data["lessons"][lessonIndex]["title"] = document.getElementById("title").value;
+    }
+
     function updatePreview() {
       document.getElementById("preview").innerHTML = converter.makeHtml(document.getElementById("content").value);
     }

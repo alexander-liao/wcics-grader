@@ -39,6 +39,9 @@
     <button class="buttonlink enable" disabled onclick="set_contest()">Set contest</button>
     <button class="buttonlink enable" disabled onclick="del_problem()">Delete problem</button>
     <br /><br />
+    <button class="buttonlink enable" disabled onclick="change_style('main stylesheet', 'change_style')">Change Stylesheet</button>
+    <button class="buttonlink enable" disabled onclick="change_style('learn page stylesheet', 'change_learn_style')">Change Learn Page Stylesheet</button>
+    <br /><br />
     <button class="buttonlink enable" disabled onclick="contest_mode('stop')">Start Maintenance</button>
     <button class="buttonlink enable" disabled onclick="contest_mode('start')">Stop Maintenance</button>
     <button class="buttonlink enable" disabled onclick="set_user_points()">Set user points</button>
@@ -47,37 +50,37 @@
     <button class="buttonlink enable" disabled onclick="edit_problem('/write_problem')">Write problem</button>
     <button class="buttonlink enable" disabled onclick="load_problem()">Load problem</button>
     <br /><br />
-    <input type="text" id="title" style="width:49%;font-family:monospace" placeholder="Title" />
-    <input type="text" id="id" style="width:49%;font-family:monospace" placeholder="Problem ID" />
+    <input type="text" id="title" style="width:45%;font-family:monospace" placeholder="Title" />
+    <input type="text" id="id" style="width:45%;font-family:monospace" placeholder="Problem ID" />
     <br /><br />
-    <input type="text" id="tags" style="width:49%;font-family:monospace" placeholder="Comma-separated tags" />
-    <input type="text" id="ctst" style="width:49%;font-family:monospace" placeholder="Contest/Problem Category" />
+    <input type="text" id="tags" style="width:45%;font-family:monospace" placeholder="Comma-separated tags" />
+    <input type="text" id="ctst" style="width:45%;font-family:monospace" placeholder="Contest/Problem Category" />
     <br /><br />
-    <textarea style="width:49%;height:5em;font-family:monospace" id="desc" placeholder="Challenge Description"></textarea>
-    <textarea style="width:49%;height:5em;font-family:monospace" id="inpt" placeholder="Input Specifications"></textarea>
-    <textarea style="width:49%;height:5em;font-family:monospace" id="outp" placeholder="Output Specifications"></textarea>
-    <textarea style="width:49%;height:5em;font-family:monospace" id="subt" placeholder="Subtask Specifications"></textarea>
-    <textarea style="width:49%;height:5em;font-family:monospace" id="smpl" placeholder="Sample I/O, alternating lines"></textarea>
-    <textarea style="width:49%;height:5em;font-family:monospace" id="edit" placeholder="Editorial"></textarea>
-    <textarea style="width:49%;height:10em;font-family:monospace" id="impl" placeholder="Correct Implementation (Full Program, enter as though a full scoring submission to the problem)"></textarea>
-    <textarea style="width:49%;height:10em;font-family:monospace" id="genr" placeholder="Test Case Generator (Full Program, first line of STDIN represents which test suite is being generated and second line of STDIN represents which test case is being generated, output the exact text output for a single test case)"></textarea>
+    <textarea style="width:45%;height:5em;font-family:monospace" id="desc" placeholder="Challenge Description"></textarea>
+    <textarea style="width:45%;height:5em;font-family:monospace" id="inpt" placeholder="Input Specifications"></textarea>
+    <textarea style="width:45%;height:5em;font-family:monospace" id="outp" placeholder="Output Specifications"></textarea>
+    <textarea style="width:45%;height:5em;font-family:monospace" id="subt" placeholder="Subtask Specifications"></textarea>
+    <textarea style="width:45%;height:5em;font-family:monospace" id="smpl" placeholder="Sample I/O, alternating lines"></textarea>
+    <textarea style="width:45%;height:5em;font-family:monospace" id="edit" placeholder="Editorial"></textarea>
+    <textarea style="width:45%;height:10em;font-family:monospace" id="impl" placeholder="Correct Implementation (Full Program, enter as though a full scoring submission to the problem)"></textarea>
+    <textarea style="width:45%;height:10em;font-family:monospace" id="genr" placeholder="Test Case Generator (Full Program, first line of STDIN represents which test suite is being generated and second line of STDIN represents which test case is being generated, output the exact text output for a single test case)"></textarea>
     <br />
     <div style="line-height:2em">
-      <input type="text" id="impl_filename" style="font-family:monospace;width:49%" placeholder="File location for storing the sample implementation" />
-      <input type="text" id="genr_filename" style="font-family:monospace;width:49%" placeholder="File location for storing the test case generator" />
+      <input type="text" id="impl_filename" style="font-family:monospace;width:45%" placeholder="File location for storing the sample implementation" />
+      <input type="text" id="genr_filename" style="font-family:monospace;width:45%" placeholder="File location for storing the test case generator" />
       <br />
-      <input type="text" id="impl_precommand" style="font-family:monospace;width:49%" placeholder="Pre-command to run the sample implementation" />
-      <input type="text" id="genr_precommand" style="font-family:monospace;width:49%" placeholder="Pre-command to run the test case generator" />
+      <input type="text" id="impl_precommand" style="font-family:monospace;width:45%" placeholder="Pre-command to run the sample implementation" />
+      <input type="text" id="genr_precommand" style="font-family:monospace;width:45%" placeholder="Pre-command to run the test case generator" />
       <br />
-      <input type="text" id="impl_command" style="font-family:monospace;width:49%" placeholder="Command to run the sample implementation" />
-      <input type="text" id="genr_command" style="font-family:monospace;width:49%" placeholder="Command to run the test case generator" />
+      <input type="text" id="impl_command" style="font-family:monospace;width:45%" placeholder="Command to run the sample implementation" />
+      <input type="text" id="genr_command" style="font-family:monospace;width:45%" placeholder="Command to run the test case generator" />
       <br />
-      <input type="text" id="impl_postcommand" style="font-family:monospace;width:49%" placeholder="Post-command to run the sample implementation" />
-      <input type="text" id="genr_postcommand" style="font-family:monospace;width:49%" placeholder="Post-command to run the test case generator" />
+      <input type="text" id="impl_postcommand" style="font-family:monospace;width:45%" placeholder="Post-command to run the sample implementation" />
+      <input type="text" id="genr_postcommand" style="font-family:monospace;width:45%" placeholder="Post-command to run the test case generator" />
       <br />
-      <input type="text" id="pts" style="font-family:monospace;width:49%" placeholder="Test Case Points (separated by /)" />
-      <input type="text" id="tls" style="font-family:monospace;width:23.8%" placeholder="Test Case Timelimits" />
-      <input type="text" id="tcc" style="font-family:monospace;width:23.8%" placeholder="Test Case Count" />
+      <input type="text" id="pts" style="font-family:monospace;width:45%" placeholder="Test Case Points (separated by /)" />
+      <input type="text" id="tls" style="font-family:monospace;width:21.8%" placeholder="Test Case Timelimits" />
+      <input type="text" id="tcc" style="font-family:monospace;width:21.8%" placeholder="Test Case Count" />
     </div>
   </body>
 
@@ -239,6 +242,13 @@
             }
           }
         });
+      }
+    }
+    
+    function change_style(ptext, url) {
+      var file = prompt("Please enter the file location of the new " + ptext);
+      if (file && confirm("Are you sure you want to change the selected style of the website?")) {
+        post_data("/" + url, {"file": file});
       }
     }
   </script>

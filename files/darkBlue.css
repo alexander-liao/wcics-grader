@@ -1,6 +1,6 @@
 body {
-  background-color: #111;
-  color: #eee;
+  background-color: rgb(0,0,10);
+  color: #eef;
   font-family: monospace;
   margin-left: 10vw;
   margin-right: 10vw;
@@ -10,12 +10,17 @@ body {
 }
 
 p {
-  color: #ccc;
+  
 }
 
 a {
-  color: #eee;
-  text-decoration: solid #999 underline;
+  color: #06c;
+  text-decoration: solid #06c underline;
+}
+
+a:hover{
+  color: #39f;
+  text-decoration: solid #39f underline;
 }
 
 div.problem {
@@ -23,61 +28,71 @@ div.problem {
 }
 
 .buttonlink, button {
-  background-color: #ccc5;
-  color: #eee;
+  background-color: #39f7;
+  color: #eef;
   font-family: monospace;
   font-size: 100%;
   padding: 6px;
   text-decoration: none;
-  border: none;
+  border: 0px solid rgb(0,0,10);
 }
 
 .buttonlink:hover, button:hover {
-  background-color: #ccc7;
-  color: #eee;
+  background-color: #06f6;
+  color: #eef;
   font-family: monospace;
-  padding: 6px;
+  padding: 5px;
   text-decoration: none;
-  border: none;
+  border: 1px solid rgb(0,0,10);
 }
 
 button:disabled, button[disabled], button:disabled:hover, button[disabled]:hover {
-  background-color: #ccc3;
-  color: #666;
+  background-color: #eefa;
+  padding: 6px;
+  border: 0px solid rgb(0,0,10);
 }
 
 hr {
-  border-color: #666;
+  border-color: #ddd;
 }
 
 .sample {
-  border: 1px solid #eee;
+  border: 1px solid #eef;
 }
 
 .leaderboard {
-  border: 1px solid #eee;
+  border: 1px solid #eef;
   border-collapse: collapse;
   padding: 5px;
 }
 
-option {
+option, select {
   background-color: #222;
-}
-
-input, textarea, select {
-  background-color: #5557;
-  color: #eee;
-  font-family: monospace;
-  font-size: 100%;
-  border: none;
+  color: #eef;
+  border: 1px solid black;
   padding: 3px;
 }
+
+input, textarea {
+  background-color: #4444;
+  color: #eef;
+  font-family: monospace;
+  font-size: 100%;
+  border: 1px solid black;
+  padding: 3px;
+}
+
+input::placeholder, textarea::placeholder, select::placeholder {
+
+}
+
 table{
   border-collapse: collapse;
+  width: 100%;
 }
 
 table, th, td {
-  border: 1px solid #eee;
+  border: 1px solid #eef;
   padding: 8px;
 }
 
@@ -87,7 +102,7 @@ table, th, td {
 
 .inline_code {
   text-decoration: none;
-  background-color: #333;
+  background-color: #ddd;
   padding-top: 0.2em;
   padding-bottom: 0.2em;
   padding-left: 0.5em;

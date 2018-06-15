@@ -4,47 +4,48 @@ if (match != null) {
   var array = decodeURIComponent(match[0].split("=")[1]).split(";");
   var username = array[0];
   tryAuth(array[0], array[1], false);
-}
-else{
-  if(document.getElementsByTagName("title")[0].innerHTML != "Site under Maintenance"){
-  admin_pass("a","");
+} else {
+  if (document.getElementsByTagName("title")[0].innerHTML != "Site under Maintenance") {
+    admin_pass("a", "");
   }
 }
 var mode = 0;
- 
+
 var running = ""
-function admin_pass(username,password){
-fetch("/running").then(function(response){return response.text()}).then(function(text){
-  running = text=="True";
-  var auth;
-  fetch("/admin_auth", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        })
-      }).then(function(response) {
-        return response.text();
-      }).then(function(text) {
-        if (text != "auth") {
-          if(document.getElementsByTagName("TITLE")[0].innerHTML == "SUDO" || document.getElementsByTagName("TITLE")[0].innerHTML == "LearnSudo"){
-            console.log("Hey, What are you doing here!")
-            window.location.replace("/");
-          }
-          if(!running && document.getElementsByTagName("TITLE")[0].innerHTML != "Site under Maintenance"){
+
+function admin_pass(username, password) {
+  fetch("/running").then(function(response) {
+    return response.text()
+  }).then(function(text) {
+    running = text == "True";
+    var auth;
+    fetch("/admin_auth", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+      })
+    }).then(function(response) {
+      return response.text();
+    }).then(function(text) {
+      if (text != "auth") {
+        if (document.getElementsByTagName("TITLE")[0].innerHTML == "SUDO" || document.getElementsByTagName("TITLE")[0].innerHTML == "LearnSUDO") {
+          console.log("Hey, What are you doing here!")
+          window.location.replace("/");
+        }
+        if (!running && document.getElementsByTagName("TITLE")[0].innerHTML != "Site under Maintenance") {
           console.log("Hey, you're not an admin!");
           window.location.replace("/maintenance");
-          }
         }
-        else{
-          console.log("Welcome, Admin!");
-        }
-      })}
-);
+      } else {
+        console.log("Welcome, Admin!");
+      }
+    })
+  });
 }
 
 function updatepts() {
@@ -59,7 +60,7 @@ function updatepts() {
           var scores = JSON.parse(text);
           var pts = document.getElementsByClassName("pts");
           var names = document.getElementsByClassName("name");
-          for (var index = 0; index < pts.length; index++) { 
+          for (var index = 0; index < pts.length; index++) {
             var id = names[index].href.split("/")[4];
             if (id in scores) {
               pts[index].innerHTML = scores[id] + "/" + pts[index].innerHTML.split("/")[1]
@@ -70,7 +71,7 @@ function updatepts() {
           }
           pts = document.getElementsByClassName("featured_pts");
           names = document.getElementsByClassName("featured_name");
-          for ( index = 0; index < pts.length; index++) { 
+          for (index = 0; index < pts.length; index++) {
             var id = names[index].href.split("/")[4];
             if (id in scores) {
               pts[index].innerHTML = scores[id] + "/" + pts[index].innerHTML.split("/")[1]
@@ -79,7 +80,7 @@ function updatepts() {
 
             }
           }
-          
+
         }
       });
     }
@@ -151,7 +152,7 @@ function auth() {
         } else if (text == "userexists") {
           console.log("User exists!");
           alert("This username is already in use!");
-        } else if(text == "invalid") {
+        } else if (text == "invalid") {
           console.log("Username too long!");
           window.location.replace("/urbad");
         }
@@ -164,7 +165,7 @@ function auth() {
 }
 
 function tryAuth(username, password, dohash) {
-  admin_pass(username,dohash ? hash(password) : password); 
+  admin_pass(username, dohash ? hash(password) : password);
   fetch("/authuser", {
     method: "POST",
     headers: {
@@ -180,8 +181,9 @@ function tryAuth(username, password, dohash) {
   }).then(function(text) {
     if (text == "auth") {
       successAuth(username, password, dohash);
+    } else {
+      alert("Login Failed; invalid credentials.");
     }
-
   });
 }
 

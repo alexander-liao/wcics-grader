@@ -1,7 +1,7 @@
 import os, sys, threading, json, shutil, base64, requests, io, traceback, html, shlex, math, hashlib
 
-from math import ceil,log
-from flask import Flask, request, Response
+from math import ceil, log
+from flask import Flask, request, Response, redirect
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -19,18 +19,21 @@ debug = "--debug" in sys.argv
 
 if not debug: logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-users = json.loads(open("/home/cabox/workspace/wcics-grader/files/users.json").read())
+users = json.loads(open("files/users.json").read())
 
 def update_probs():
-  return {p: json.loads(open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json"%p).read()) for p in open("/home/cabox/workspace/wcics-grader/files/contest.txt").read().splitlines()}
+  return {p: json.loads(open("files/problems/%s/problem.json"%p).read()) for p in open("files/contest.txt").read().splitlines()}
+
+def lessons():
+  return json.loads(open("files/learn/lessons.json").read())
 
 problem_map = update_probs()
 
 pages = math.ceil(len(problem_map)/10)
 
-running = eval(open("/home/cabox/workspace/wcics-grader/files/running.txt", "r").read().strip())
+running = eval(open("files/running.txt", "r").read().strip())
 
-sudoers = open("/home/cabox/workspace/wcics-grader/files/admin.txt").read().splitlines()
+sudoers = open("files/admin.txt").read().splitlines()
 
 extraTLS = {
   "Python 3.6.4": 4,
@@ -185,14 +188,14 @@ def d(string,key):
 def f(n):return min(((ceil(log(256)/log(n)*a),a) for a in range(1,256)),key=lambda a:(ceil(log(256)/log(n)*a[1]) - log(256)/log(n) * a[1],a[1]))
 
 def get_data(name):
-  with open("/home/cabox/workspace/wcics-grader/files/problems/%s/tests.json" % name, "r", encoding = "utf-8") as f:
+  with open("files/problems/%s/tests.json" % name, "r", encoding = "utf-8") as f:
     return json.load(f)
 
 def update_users():
-  with open("/home/cabox/workspace/wcics-grader/files/users.json", "w") as f:
+  with open("files/users.json", "w") as f:
     f.write(json.dumps(users))
 
-submissions = json.load(open("/home/cabox/workspace/wcics-grader/files/submissions.json"))
+submissions = json.load(open("files/submissions.json"))
 
 def process_submission(username, password, code, language, problem):
   username = username.strip()
@@ -228,7 +231,7 @@ def process_submission(username, password, code, language, problem):
         submission[3].append(num)
     test(shlex.split(commands[-1]), get_data(problem), foldername, recv, username, problem, language)
     shutil.rmtree(foldername)
-    with open("/home/cabox/workspace/wcics-grader/files/submissions.json", "w") as f:
+    with open("files/submissions.json", "w") as f:
       f.write(json.dumps(submissions))
   threading.Thread(target = proc).start()
   print("{username} created a submission in {language} for {problem} with id {id}".format(username = username, language = language, problem = problem, id = id))
@@ -241,15 +244,15 @@ def get_sorted_users():
   return sorted(list(users), key = lambda u: (sum(users[u]["scores"][p] for p in users[u]["scores"] if p in getProblems()), -users[u]["recency"]), reverse = True)
 
 def getProblems():
-  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "r") as f:
+  with open("files/contest.txt", "r") as f:
     return f.read().splitlines()
 
 def getFeaturedProblems():
-  with open("/home/cabox/workspace/wcics-grader/files/featured.txt") as f:
+  with open("files/featured.txt") as f:
     return f.read().splitlines()
 
 def fullname(name):
-  with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % name, "r", encoding = "utf8") as f:
+  with open("files/problems/%s/problem.json" % name, "r", encoding = "utf8") as f:
     return json.loads(f.read())["title"]
 
 def getFullNames():
@@ -261,6 +264,10 @@ def decode(string):
 def load_json(bytestring):
   return json.loads("".join(map(chr, bytestring)))
 
+@app.route("/beta")
+def serveBeta():
+  return redirect("http://wcics-site-alexyjliao153051.codeanyapp.com/")
+
 @app.route("/")
 def serveRoot():
   return servePage(0)
@@ -270,51 +277,74 @@ def servePage(page):
   global pages
   row = "<tr class='problems'><td><a class='name' href='/problem/%s'>%s</a></td><td class='ctst'>%s</td><td class='tags'>%s</td><td class='pts'>0/%s</td><td class='editorial'><a href=/problem/%s/editorial>Editorial</a></td></tr>"
   featured_row = "<tr class='featured_problems'><td><a class='featured_name' href='/problem/%s'>%s</a></td><td class='featured_ctst'>%s</td><td class='featured_tags'>%s</td><td class='featured_pts'>0/%s</td><td class='featured_editorial'><a href=/problem/%s/editorial>Editorial</a></td></tr>"
-  with open("/home/cabox/workspace/wcics-grader/files/index.html", "r") as f:
-    return f.read() % ("".join(featured_row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getFeaturedProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join(row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join("<a href='/page/%d'>%d</a>%s"%(a-1,a,"&nbsp;"*3 if a != pages else "") for a in range(1,pages+1)),page-1,page+1,str(0 - (page!=0) + (page != pages-1)))
+  featured_wrapper = "<h1>Featured Problems</h1><table><tr><th>Problem Name</th><th>Category</th><th>Tags</th><th>Points</th><th>Editorial</th></tr>%s</table>"
+  with open("files/index.html", "r") as f:
+    return f.read() % (featured_wrapper % "".join(featured_row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getFeaturedProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))) if getFeaturedProblems() else "","".join(row %(problem_map[p]['id'],problem_map[p]['title'],problem_map[p]['ctst'],", ".join(problem_map[p]['tags']),sum(map(int,problem_map[p]['pts'].split("/"))),problem_map[p]['id']) for p in sorted(getProblems(),key=lambda x:(sum(map(int,problem_map[x]['pts'].split("/"))),problem_map[x]['id']))),"".join("<a href='/page/%d'>%d</a>%s"%(a-1,a," "*3 if a != pages else "") for a in range(1,pages+1)),page-1,page+1,str(0 - (page!=0) + (page != pages-1)))
  
 @app.route("/tankdoc")
 def tankdoc():
-  with open("/home/cabox/workspace/wcics-grader/files/tankdoc.html") as f:
+  with open("files/tankdoc.html") as f:
     return f.read()
 
 @app.route("/tanksim")
 def tanksim():
-  with open("/home/cabox/workspace/wcics-grader/files/tanksim.html") as f:
+  with open("files/tanksim.html") as f:
     return f.read()
   
 @app.route("/account")
 def account():
-  return open("/home/cabox/workspace/wcics-grader/files/account.html").read()
+  return open("files/account.html").read()
 
 @app.route("/stylesheet.css")
 def serveStyleSheet():
-  with open("/home/cabox/workspace/wcics-grader/files/stylesheet.css", "r") as f:
-    return Response(f.read(), mimetype="text/css")
+  with open("files/config.json", "r") as c:
+    with open(json.loads(c.read())["maincss"], "r") as f:
+      return Response(f.read(), mimetype="text/css")
 
 @app.route("/learnsheet.css")
 def serveLearnSheet():
-  with open("/home/cabox/workspace/wcics-grader/files/learnsheet.css", "r") as f:
-    return Response(f.read(), mimetype="text/css")
+  with open("files/config.json", "r") as c:
+    with open(json.loads(c.read())["learncss"], "r") as f:
+      return Response(f.read(), mimetype="text/css")
+
+@app.route("/change_style", methods = ["POST"])
+def setStyle():
+  data = load_json(request.data)
+  with open("files/config.json", "r") as f:
+    cdat = json.loads(f.read())
+  cdat["maincss"] = data["file"]
+  with open("files/config.json", "w") as f:
+    f.write(json.dumps(cdat))
+  return ""
+
+@app.route("/change_learn_style", methods = ["POST"])
+def setLearnStyle():
+  data = load_json(request.data)
+  with open("files/config.json", "r") as f:
+    cdat = json.loads(f.read())
+  cdat["learncss"] = data["file"]
+  with open("files/config.json", "w") as f:
+    f.write(json.dumps(cdat))
+  return ""
 
 @app.route("/favicon.ico")
 def serveIcon():
-  with open("/home/cabox/workspace/wcics-grader/files/favicon.ico", "rb") as f:
+  with open("files/favicon.ico", "rb") as f:
     return Response(f.read(), mimetype="image/x-icon")
 
 @app.route("/sudo")
 def sudo():
   if debug: print("User accessed SUDO page!")
-  with open("/home/cabox/workspace/wcics-grader/files/sudo.html", "r") as f:
+  with open("files/sudo.html", "r") as f:
     return f.read()
 
 @app.route("/urbad")
 def urbad():
-  return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><code><a class='buttonlink' href='/'>&lt;&lt;&lt; Back</a>&nbsp;&nbsp;<a class='buttonlink' href='/enter_submission'>Submit &gt;&gt;&gt;</a></code><h1>Username cannot exceed 24 characters or be blank</h1>"
+  return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><code><a class='buttonlink' href='/'><<< Back</a>  <a class='buttonlink' href='/enter_submission'>Submit >>></a></code><h1>Username cannot exceed 24 characters or be blank</h1>"
 
 @app.route("/passwordfail")
 def passwordfail():
-  return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><code><a class='buttonlink' href='/'>&lt;&lt;&lt; Back</a>&nbsp;&nbsp;<a class='buttonlink' href='/enter_submission'>Submit &gt;&gt;&gt;</a></code><h1>Password was unexpectedly changed between signin and submission, or you are trying to enter submissions through JS fetch without knowing the password field and hoping I didn't check :)</h1>"
+  return "<link rel='stylesheet' href='/stylesheet.css' type='text/css' /><code><a class='buttonlink' href='/'><<< Back</a>  <a class='buttonlink' href='/enter_submission'>Submit >>></a></code><h1>Password was unexpectedly changed between signin and submission, or you are trying to enter submissions through JS fetch without knowing the password field and hoping I didn't check :)</h1>"
 
 @app.route("/js-sha")
 def js_sha():
@@ -323,12 +353,12 @@ def js_sha():
 
 @app.route("/authjs")
 def authjs():
-  with open("/home/cabox/workspace/wcics-grader/files/auth.js", "r") as f:
+  with open("files/auth.js", "r") as f:
     return f.read()
 
 @app.route("/tankjs")
 def tankjs():
-  with open("/home/cabox/workspace/wcics-grader/files/tank.js", "r") as f:
+  with open("files/tank.js", "r") as f:
     return f.read()
 
 def auth(username, password, **k): # the **k is to allow sudoAuth(**data) instead of sudoAuth(data["username], data["password"])
@@ -415,7 +445,7 @@ def stop_contest():
   global running
   if sudoAuth(**data):
     running = False
-    with open("/home/cabox/workspace/wcics-grader/files/running.txt", "w") as f:
+    with open("files/running.txt", "w") as f:
       f.write("False")
     print("Contest stopped!")
   else:
@@ -428,7 +458,7 @@ def start_contest():
   data = load_json(request.data)
   if sudoAuth(**data):
     running = True
-    with open("/home/cabox/workspace/wcics-grader/files/running.txt", "w") as f:
+    with open("files/running.txt", "w") as f:
       f.write("True")
     print("Contest started!")
   else:
@@ -445,10 +475,10 @@ def add_problem():
   return ""
 
 def __add_problem(name):
-  if name in os.listdir("/home/cabox/workspace/wcics-grader/files/problems"):
-    with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "a", encoding = "utf-8") as f:
+  if name in os.listdir("files/problems"):
+    with open("files/contest.txt", "a", encoding = "utf-8") as f:
       f.write(name + "\n")
-    problem_map[name] = json.loads(open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json"%name).read())
+    problem_map[name] = json.loads(open("files/problems/%s/problem.json"%name).read())
     print("Added {name} to the contest!".format(name = name))
   else:
     print("Could not add {name} to the contest because the problem does not exist!".format(name = name))
@@ -463,14 +493,14 @@ def rm_problem():
   return ""
 
 def __rm_problem(name):
-  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "r", encoding = "utf-8") as f:
+  with open("files/contest.txt", "r", encoding = "utf-8") as f:
     lines = f.read().splitlines()
   index = lines.index(name) if name in lines else -1
   if index != -1:
     print("Removed {name} from the contest!".format(name = name))
   else:
     print("Could not remove {name} from the contest because the problem was not in the contest!".format(name = name))
-  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "w", encoding = "utf-8") as f:
+  with open("files/contest.txt", "w", encoding = "utf-8") as f:
     f.write("\n".join(line for line in lines if line != name) + "\n")
 
 @app.route("/reset_contest", methods = ["POST"])
@@ -484,7 +514,7 @@ def reset_contest():
   return ""
 
 def __reset_contest():
-  with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "w", encoding = "utf-8") as f:
+  with open("files/contest.txt", "w", encoding = "utf-8") as f:
     f.write("")
 
 @app.route("/set_contest", methods = ["POST"])
@@ -497,9 +527,9 @@ def set_contest():
   return ""
 
 def __set_contest(contest):
-  if contest + ".config" in os.listdir("/home/cabox/workspace/wcics-grader/files/contests"):
-    with open("/home/cabox/workspace/wcics-grader/files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
-      with open("/home/cabox/workspace/wcics-grader/files/contest.txt", "w", encoding = "utf-8") as g:
+  if contest + ".config" in os.listdir("files/contests"):
+    with open("files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
+      with open("files/contest.txt", "w", encoding = "utf-8") as g:
         g.write(f.read())
     print("Set the contest to " + contest + "!")
   else:
@@ -515,9 +545,9 @@ def load_problem():
   return ""
 
 def __load_problem(problem):
-  if problem in os.listdir("/home/cabox/workspace/wcics-grader/files/problems"):
+  if problem in os.listdir("files/problems"):
     print("Loaded problem " + problem + "!")
-    with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % problem, "r") as f:
+    with open("files/problems/%s/problem.json" % problem, "r") as f:
       return f.read()
   else:
     print("Could not find problem " + problem + "!")
@@ -533,9 +563,9 @@ def load_config():
   return ""
 
 def __load_config(contest):
-  if contest + ".config" in os.listdir("/home/cabox/workspace/wcics-grader/files/contests"):
+  if contest + ".config" in os.listdir("files/contests"):
     print("Loaded configuration for contest " + contest + "!")
-    with open("/home/cabox/workspace/wcics-grader/files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
+    with open("files/contests/" + contest + ".config", "r", encoding = "utf-8") as f:
       return f.read().strip()
   else:
     print("Could not find contest " + contest + "!")
@@ -551,7 +581,7 @@ def save_config():
   return ""
 
 def __save_config(contest, config):
-  with open("/home/cabox/workspace/wcics-grader/files/contests/" + contest + ".config", "w", encoding = "utf-8") as f:
+  with open("files/contests/" + contest + ".config", "w", encoding = "utf-8") as f:
     f.write(config.strip() + "\n")
   print("Set configuration for contest " + contest + "!")
 
@@ -565,7 +595,7 @@ def del_problem():
   return ""
 
 def __del_problem(name):
-  shutil.rmtree("/home/cabox/workspace/wcics-grader/files/problems/" + name)
+  shutil.rmtree("files/problems/" + name)
   print("Deleted {name} permanently!".format(name = name))
   __rm_problem(name)
 
@@ -584,14 +614,14 @@ def __write_problem(data):
     problem = data
     problem["tags"] = list(map(str.strip, problem["tags"].split(",")))
     print("[-- writing problem {problem_id} --]".format(problem_id = problem["id"]))
-    if problem["id"] not in os.listdir("/home/cabox/workspace/wcics-grader/files/problems"):
+    if problem["id"] not in os.listdir("files/problems"):
       print("* creating problem folder...")
-      os.mkdir("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"])
-    with open("/home/cabox/workspace/wcics-grader/files/problem_format.html", "r", encoding = "utf-8") as f:
+      os.mkdir("files/problems/" + problem["id"])
+    with open("files/problem_format.html", "r", encoding = "utf-8") as f:
       smpl = problem["smpl"].split("\n")
       smpl = [(smpl[i * 2], smpl[i * 2 + 1]) for i in range(len(smpl) // 2)]
       print("* writing problem JSON file...")
-      with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % problem["id"], "w") as f:
+      with open("files/problems/%s/problem.json" % problem["id"], "w") as f:
         f.write(json.dumps(problem))
     print("* done!")
     
@@ -615,13 +645,13 @@ def __create_problem(data):
       print("=" * 50)
       print(problem["genr"])
       print("=" * 50)
-      with open("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["impl_filename"], "w") as f:
+      with open("files/problems/" + problem["id"] + "/" + problem["impl_filename"], "w") as f:
         f.write(problem["impl"])
-      with open("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["genr_filename"], "w") as f:
+      with open("files/problems/" + problem["id"] + "/" + problem["genr_filename"], "w") as f:
         f.write(problem["genr"])
       print("* running pre-commands...")
-      if problem["impl_precommand"]: check_output(shlex.split(problem["impl_precommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
-      if problem["genr_precommand"]: check_output(shlex.split(problem["genr_precommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
+      if problem["impl_precommand"]: check_output(shlex.split(problem["impl_precommand"]), cwd = "files/problems/" + problem["id"] + "/")
+      if problem["genr_precommand"]: check_output(shlex.split(problem["genr_precommand"]), cwd = "files/problems/" + problem["id"] + "/")
       pts = list(map(int, problem["pts"].split("/")))
       tls = list(map(int, problem["tls"].split("/"))) * (len(pts) if "/" not in problem["tls"] else 1)
       tcc = list(map(int, problem["tcc"].split("/"))) * (len(pts) if "/" not in problem["tcc"] else 1)
@@ -638,21 +668,21 @@ def __create_problem(data):
         for case in range(tc):
           c = case
           print("* generating case %d of %d..." % (c + 1, tc))
-          test_in = check_output(genr_command, input = bytes(str(suiteno) + "\n" + str(case), "utf-8"), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
-          test_out = hashlib.sha384(bytes("".join(map(chr, check_output(impl_command, input = test_in, stderr = sys.stdout, cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/"))).strip(), "utf8")).hexdigest()
+          test_in = check_output(genr_command, input = bytes(str(suiteno) + "\n" + str(case), "utf-8"), cwd = "files/problems/" + problem["id"] + "/")
+          test_out = hashlib.sha384(bytes("".join(map(chr, check_output(impl_command, input = test_in, stderr = sys.stdout, cwd = "files/problems/" + problem["id"] + "/"))).strip(), "utf8")).hexdigest()
           test_in = test_in.decode("utf-8")
           key = "".join(set(test_in))
           test_in = compress(test_in,key)
           test_cases[c] = (test_in, test_out, key)
       print("* writing test case JSON file...")
-      with open("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + "tests.json", "w") as f:
+      with open("files/problems/" + problem["id"] + "/" + "tests.json", "w") as f:
         f.write(json.dumps(tests))
       print("* running post-commands...")
-      if problem["impl_postcommand"]: check_output(shlex.split(problem["impl_postcommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
-      if problem["genr_postcommand"]: check_output(shlex.split(problem["genr_postcommand"]), cwd = "/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/")
+      if problem["impl_postcommand"]: check_output(shlex.split(problem["impl_postcommand"]), cwd = "files/problems/" + problem["id"] + "/")
+      if problem["genr_postcommand"]: check_output(shlex.split(problem["genr_postcommand"]), cwd = "files/problems/" + problem["id"] + "/")
       print("* cleaning up generation files...")
-      os.remove("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["impl_filename"])
-      os.remove("/home/cabox/workspace/wcics-grader/files/problems/" + problem["id"] + "/" + problem["genr_filename"])
+      os.remove("files/problems/" + problem["id"] + "/" + problem["impl_filename"])
+      os.remove("files/problems/" + problem["id"] + "/" + problem["genr_filename"])
       print("* done!")
   except:
     traceback.print_exc()
@@ -660,36 +690,123 @@ def __create_problem(data):
   update_probs()
   return ""
 
+def getSeries(seriesID):
+  for d in lessons():
+    if d["seriesID"] == seriesID:return d
+    
+def getSeriesIndex(seriesID):
+  for i,d in enumerate(lessons()):
+    if d["seriesID"] == seriesID:return i
+  return -1
+    
 @app.route("/learnsudo")
 def learnsudo():
-  with open("/home/cabox/workspace/wcics-grader/files/learn/learnsudo.html", "r") as f:
+  with open("files/learn/learnsudo.html", "r") as f:
     return f.read()
 
-@app.route("/load_lesson/<id>")
-def load_lesson(id):
-  with open("/home/cabox/workspace/wcics-grader/files/learn/lessons/%s.json" % id, "r") as f:
-    return f.read()
-
-@app.route("/save_lesson/<id>", methods = ["POST"])
-def save_lesson(id):
-  with open("/home/cabox/workspace/wcics-grader/files/learn/lessons/%s.json" % id, "w") as f:
-    f.write(json.dumps({
-      "id": id,
-      "title": request.json["title"],
-      "body": request.json["body"],
-      "bodyhtml": request.json["bodyhtml"]
-    }))
+@app.route("/save_series",methods=["POST"])
+def save_series():
+  data = load_json(request.data)
+  if sudoAuth(**data):
+    d = lessons()
+    if getSeriesIndex(data["seriesID"])==-1:
+      d.append({"seriesID":data["seriesID"]})
+    d[getSeriesIndex(data["seriesID"])] = data["data"]
+    open("files/learn/lessons.json","w").write(json.dumps(d))
   return ""
 
-@app.route("/learn/<id>")
-def learn(id):
-  with open("/home/cabox/workspace/wcics-grader/files/learn/lessons/%s.json" % id, "r") as f:
-    return json.loads(f.read())["bodyhtml"]
+@app.route("/load_series",methods=["POST"])
+def load_series():
+  data = load_json(request.data)
+  if sudoAuth(**data):
+    if getSeriesIndex(data["seriesID"]) == -1:
+      return json.dumps({"seriesID":data["seriesID"],"lessons":[]})
+    return json.dumps(getSeries(data["seriesID"]))
+  return ""
+
+@app.route("/del_series",methods=["POST"])
+def del_series():
+  data = load_json(request.data)
+  if(sudoAuth(**data)):
+    d = lessons()
+    if(getSeriesIndex(data["seriesID"])!=-1):
+      d.pop(getSeriesIndex(data["seriesID"]))
+      open("files/learn/lessons.json","w").write(json.dumps(d))
+  return ""
+      
+@app.route("/del_lesson",methods=["POST"])
+def del_lesson():
+  data = load_json(request.data)
+  if(sudoAuth(**data)):
+    d = lessons()
+    d[getSeriesIndex(data["seriesID"])]["lessons"].pop(int(data["index"]))
+    open("files/learn/lessons.json","w").write(json.dumps(d))
+  return ""
+
+@app.route("/move_series",methods=["POST"])
+def move_series():
+  data = load_json(request.data)
+  if sudoAuth(**data):
+    d = lessons()
+    d.insert(int(data["index"]),d.pop(getSeriesIndex(data["seriesID"])))
+    open("files/learn/lessons.json","w").write(json.dumps(d))
+  return ""
+    
+@app.route("/move_lesson",methods=["POST"])
+def move_lesson():
+  data = load_json(request.data)
+  if sudoAuth(**data):
+    d = lessons()
+    print(d[getSeriesIndex(data["seriesID"])],data)
+    toIns = d[getSeriesIndex(data["seriesID"])]["lessons"].pop(int(data["pop_index"]))
+    d[getSeriesIndex(data["seriesID"])]["lessons"].insert(int(data["index"])+1,toIns)
+    open("files/learn/lessons.json","w").write(json.dumps(d))
+  return ""
+
+def blink(text, url, disabled = False,classes=""):
+  return "<button class='buttonlink %s'%s onclick='window.open(\"%s\", \"_self\")'>%s</button>" % (classes," disabled" if disabled else "", url, text)
+
+def createHeader(data, lesson):
+  lessons = data["lessons"]
+  for index,l in enumerate(lessons):
+    if l["lessonID"] == lesson:
+      break
+  else:
+    index = -1
+  ids = list(map((lambda x:x["lessonID"]),lessons))
+  id = data["seriesID"]
+  return "<a class='buttonlink' href='/learn'><<< Back</a>  " + "  ".join(blink(x, y,z) for x, y, z in [
+    ("<<< Intro", "/learn/%s" % (id), index == 0),
+    ("<< First" if index else "First >>", "/learn/%s/%s" % (id, ids[1] if len(ids)>1 else ""), index == 1 or len(ids)==1),
+    ("< Prev", "/learn/%s/%s" % (id, ids[(index - 1) % len(ids)]), index <= 1),
+    ("Next >", "/learn/%s/%s" % (id, ids[(index + 1) % len(ids)]), index + 1 == len(ids)),
+    ("Last >>", "/learn/%s/%s" % (id, ids[-1]), index + 1 == len(ids)),
+  ]) + "<br /><br />"
+
+@app.route("/learn")
+def learnPage():
+  return open("files/learn/template.html").read()%("Learn!","<center><h1>Series</h1>"+"<br />".join(blink(a["lessons"][0]["title"],"/learn/"+a["seriesID"],False,"centerButton") for a in lessons()) + "</center>")
+
+
+@app.route("/learn/<series>")
+def seriesPage(series):
+  return open("files/learn/template.html").read()%("Introduction to %s"%getSeries(series)["lessons"][0]["title"],createHeader(getSeries(series),"intro")+getSeries(series)["lessons"][0]["bodyHTML"]+"<center>" + "<br /><h2>Lessons</h2><hr /><br />"+"<br />".join(blink(a["title"],"/learn/%s/%s"%(series,a["lessonID"]),False,"centerButton") for a in getSeries(series)["lessons"][1:]) + "</center>")
+
+@app.route("/learn/<series>/<lesson>")
+def lessonPage(series,lesson):
+  data = getSeries(series)
+  lssns = data["lessons"]
+  for index,l in enumerate(lssns):
+    if l["lessonID"] == lesson:
+      break
+  else:
+    index = -1
+  return open("files/learn/template.html").read()%(lssns[index]["title"],createHeader(data,lesson) + lssns[index]["bodyHTML"])
 
 @app.route("/problem/<id>")
 def problem(id):
-  with open("/home/cabox/workspace/wcics-grader/files/problems/%s/problem.json" % id, "r") as p:
-    with open("/home/cabox/workspace/wcics-grader/files/problem_format.html", "r") as f:
+  with open("files/problems/%s/problem.json" % id, "r") as p:
+    with open("files/problem_format.html", "r") as f:
       p = json.loads(p.read())
       title = p["title"]
       desc = p["desc"]
@@ -702,17 +819,17 @@ def problem(id):
 @app.route("/problem/<id>/editorial")
 def editorial(id):
   if id not in problem_map:
-    return open("/home/cabox/workspace/wcics-grader/files/inv_prob.html").read() % id
+    return open("files/inv_prob.html").read() % id
   p = problem_map[id]
   if "edit" not in p:
-    return open("/home/cabox/workspace/wcics-grader/files/inv_editorial.html").read() % (id,p["title"])
-  return open("/home/cabox/workspace/wcics-grader/files/editorial.html").read() % (p["title"],id,p["title"],p["edit"].replace("\n","<br />"))
+    return open("files/inv_editorial.html").read() % (id,p["title"])
+  return open("files/editorial.html").read() % (p["title"],id,p["title"],p["edit"].replace("\n","<br />"))
 
-@app.route("/leaderboard")
+#@app.route("/leaderboard")
 def leaderboard():
   problems = getProblems()
   config = [(user, [users[user]["scores"].get(problem, 0) for problem in problems]) for user in get_sorted_users()]
-  return open("/home/cabox/workspace/wcics-grader/files/leaderboard.html", "r").read() % "".join(
+  return open("files/leaderboard.html", "r").read() % "".join(
     "<tr><td>%s</td><td>%d</td><td hidden class='rcol leaderboard'>%s</td></tr>" % (html.escape(user), sum(cfg), " / ".join(map(str, cfg))) for user, cfg in config)
 
 @app.route("/enter_submission/<id>")
@@ -721,13 +838,13 @@ def enter_submission(id):
 
 @app.route("/tank_game")
 def tank_game():
-  with open("/home/cabox/workspace/wcics-grader/files/tank_game.html") as f:
+  with open("files/tank_game.html") as f:
     return f.read()
   
 def submission_file(id, sudomode = False):
   if id not in problem_map:
     id = "hello-world"
-  with open("/home/cabox/workspace/wcics-grader/files/template.html", "r") as f:
+  with open("files/template.html", "r") as f:
     return f.read() % (
       "".join(
         "<option value='{language}'>{language}</option>".format(language = language)
@@ -758,7 +875,7 @@ def submit_sudo(userhash, data):
 def submission(id):
   if id not in submissions:
     return "<title>Submission not found</title><link rel='stylesheet' href='/stylesheet.css' type='text/css' /><p style='font-family:monospace'>Sorry, submission not found with that ID.</p>"
-  return "<title>Submission</title><link rel='stylesheet' href='/stylesheet.css' type='text/css' /><a class='buttonlink' href='/problem/%s'>&lt;&lt;&lt; Back</a><br /><br /><a class='buttonlink' href='/enter_submission/%s'>Resubmit</a><br /><br />Submitted by '%s' in %s for %s<br /><br />" % tuple(submissions[id][q] for q in [2, 2, 0, 1, 2]) + "<br />".join(stringify(submissions[id][3]))
+  return "<title>Submission</title><link rel='stylesheet' href='/stylesheet.css' type='text/css' /><a class='buttonlink' href='/problem/%s'><<< Back</a><br /><br /><a class='buttonlink' href='/enter_submission/%s'>Resubmit</a><br /><br />Submitted by '%s' in %s for %s<br /><br />" % tuple(submissions[id][q] for q in [2, 2, 0, 1, 2]) + "<br />".join(stringify(submissions[id][3]))
 
 # 0, b => Test Suite # [$b point(s)]
 # 1, b => Test # passed: $b seconds
@@ -813,19 +930,19 @@ def scores(username):
   return json.dumps(users[username]["scores"])
 @app.route("/todo")
 def todo():
-  with open("/home/cabox/workspace/wcics-grader/files/todo.html") as f:
-    return f.read() % open("/home/cabox/workspace/wcics-grader/files/todo.txt").read()
+  with open("files/todo.html") as f:
+    return f.read() % open("files/todo.txt").read()
 
 @app.route("/todo/write", methods = ["POST"])
 def todo_write():
   data = load_json(request.data)
-  with open("/home/cabox/workspace/wcics-grader/files/todo.txt","w+") as f:
+  with open("files/todo.txt","w+") as f:
     f.write(data['text'])
   return ""
 
 @app.route("/maintenance")
 def maintenance():
-  return open("/home/cabox/workspace/wcics-grader/files/maintenance.html").read()
+  return open("files/maintenance.html").read()
 
 @app.route("/change_user", methods = ["POST"])
 def change_user():
@@ -886,9 +1003,5 @@ if __name__ == "__main__":
       port = 80
   else:
     port = 80
-  if len(sys.argv) >= 3 and not sys.argv[2].startswith("--"):
-    serverhash = sys.argv[2]
-  else:
-    serverhash = "7d509328bd69ef7406baf28bd9897c0bf724d8d716b014d0f95f2e8dd9c43a06"
   print("* starting!")
   app.run(host = "0.0.0.0", port = port, debug = "--debug" in sys.argv)

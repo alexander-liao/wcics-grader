@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/stylesheet.css" type="text/css" />
 </head>
 
-<body style="font-family:monospace">
+<body>
   <div class="content">
     <div id="auth_bar">
       <button class="buttonlink" onclick="sign_in()">&nbsp;&nbsp;&nbsp;Sign In&nbsp;&nbsp;&nbsp;</button>
@@ -35,16 +35,11 @@
     <input id="name" type="text" placeholder="filter by name" oninput="update()" style="width:calc(80vw - 6px)" /><br /><br />
     <input id="ctst" type="text" placeholder="filter by contest/problem category" oninput="update()" style="width:calc(80vw - 6px)" />
     <hr /><br />
-    <center><a class="buttonlink" href="/leaderboard">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Leaderboard&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></center><br /><br />
-    <center><a class="buttonlink" href="/enter_submission/_">&nbsp;&nbsp;Submit solutions here&nbsp;&nbsp;</a></center><br /><br />
-    <center><a class="buttonlink" href="/tank_game">&nbsp;&nbsp;Submit tank game code&nbsp;&nbsp;</a></center><br /><br />
-    <h1>
-      Featured Problems
-    </h1>
-    <table>
-      <tr><th>Problem Name</th><th>Category</th><th>Tags</th><th>Points</th><th>Editorial</th></tr>
-      %s
-    </table>
+<!--     <center><a class="buttonlink centerButton" href="/leaderboard">Leaderboard</a></center><br /> -->
+    <center><a class="buttonlink centerButton" href="/enter_submission/_">Enter Submissions Here</a></center><br />
+    <center><a class="buttonlink centerButton" href="/tank_game">Submit Tank Game Code</a></center><br />
+    <center><a class="buttonlink centerButton" href="/learn">Learn!</a></center>
+    %s
     <h2>
       Problems
     </h2>

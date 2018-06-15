@@ -1,0 +1,25 @@
+body {
+  line-height: 1.5em;
+}
+
+code {
+  background-color: #335;
+  color: #ddf;
+  padding: 0px 5px;
+  margin: 0px 0px;
+  display: inline-block;
+}
+
+pre {
+  background-color: #335;
+  color: #ddf;
+  width: 100%;
+}
+
+blockquote {
+  background-color: #257;
+  color: #ddf;
+  margin: 0;
+  padding: 1px 16px;
+  border-left: 4px solid #035;
+}

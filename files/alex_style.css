@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css?family=Dosis|Inconsolata|Tajawal');
+
+body {
+  background-color: #223;
+  color: #ddf;
+  font-family: Dosis, sans-serif;
+  margin-left: 10vw;
+  margin-right: 10vw;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  font-size: 100%;
+}
+
+p {
+  color: #bbd;
+  font-family: Tajawal, sans-serif;
+}
+
+a {
+  color: #ddf;
+  text-decoration: solid #999 underline;
+  font-family: Tajawal, sans-serif;
+}
+
+div.problem {
+  font-family: Tajawal, sans-serif;
+}
+
+.buttonlink, button {
+  background-color: #bbd5;
+  color: #ddf;
+  font-family: Tajawal, sans-serif;
+  font-size: 100%;
+  padding: 6px;
+  text-decoration: none;
+  border: none;
+}
+
+.buttonlink:hover, button:hover {
+  background-color: #bbd7;
+  color: #ddf;
+  font-family: Tajawal, sans-serif;
+  padding: 6px;
+  text-decoration: none;
+  border: none;
+}
+
+button:disabled, button[disabled], button:disabled:hover, button[disabled]:hover {
+  background-color: #bbd3;
+  color: #557;
+}
+
+hr {
+  border-color: #557;
+}
+
+.sample {
+  border: 1px solid #ddf;
+}
+
+option {
+  background-color: #113;
+}
+
+input, textarea, select {
+  background-color: #4467;
+  color: #ddf;
+  font-family: Inconsolata, monospace;
+  font-size: 90%;
+  border: none;
+  padding: 3px;
+}
+
+table {
+  border-collapse: collapse;
+  font-family: Tajawal, sans-serif;
+}
+
+li {
+  font-family: Tajawal, sans-serif;
+}
+
+.subinfo {
+  line-height: 0;
+  margin: 0;
+  font-family: Inconsolata, monospace;
+  font-size: 90%;
+}
+
+.AC {
+  color: #7f7;
+}
+
+table, th, td {
+  border: 1px solid #ddf;
+  padding: 8px;
+  font-family: Tajawal, sans-serif;
+}
+
+.problem_img {
+  backgournd: #b7b7d9;
+}
+
+.inline_code {
+  text-decoration: none;
+  background-color: #224;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+canvas {
+  border: 1px solid white;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  position: absolute;
+}
+
+.centerButton {
+  display: flex;
+  justify-content: center;
+  width: 20em;
+}

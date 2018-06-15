@@ -3,22 +3,22 @@ body {
 }
 
 code {
-  background-color: #444;
-  color: #fff;
+  background-color: #445;
+  color: #eee;
   padding: 0px 5px;
   margin: 0px 0px;
   display: inline-block;
 }
 
 pre {
-  background-color: #444;
-  color: #fff;
-  width: 100%;
+  background-color: #445;
+  color: #eee;
+  width: 90%;
 }
 
 blockquote {
-  background-color: #366;
-  color: #fff;
+  background-color: #445;
+  color: #eee;
   margin: 0;
   padding: 1px 16px;
   border-left: 4px solid #144;
