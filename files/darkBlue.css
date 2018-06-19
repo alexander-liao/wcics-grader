@@ -46,6 +46,26 @@ div.problem {
   border: 1px solid rgb(0,0,10);
 }
 
+.AC {
+  color: #0f0;
+}
+
+.RTE {
+  color: #ff0;
+}
+
+.WA {
+  color: #f00;
+}
+
+.TLE {
+  color: #333;
+}
+
+.SKIP {
+  color: #999;
+}
+
 button:disabled, button[disabled], button:disabled:hover, button[disabled]:hover {
   background-color: #eefa;
   padding: 6px;
